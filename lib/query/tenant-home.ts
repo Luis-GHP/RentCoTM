@@ -92,6 +92,56 @@ export function useTenantUtilityBills(unitId?: string) {
   });
 }
 
+export function useAllTenantPayments(leaseId?: string) {
+  return useQuery({
+    queryKey: ['all-tenant-payments', leaseId],
+    enabled: !!leaseId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rent_payment')
+        .select('*')
+        .eq('lease_id', leaseId!)
+        .order('period_year', { ascending: false })
+        .order('period_month', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useAllTenantBills(unitId?: string) {
+  return useQuery({
+    queryKey: ['all-tenant-bills', unitId],
+    enabled: !!unitId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('utility_bill')
+        .select('*')
+        .eq('unit_id', unitId!)
+        .order('period_year', { ascending: false })
+        .order('period_month', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useAllTenantRequests(unitId?: string) {
+  return useQuery({
+    queryKey: ['all-tenant-requests', unitId],
+    enabled: !!unitId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('maintenance_request')
+        .select('id, title, status, priority, category, created_at, resolved_at')
+        .eq('unit_id', unitId!)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
 export function useTenantActiveRequests(unitId?: string) {
   return useQuery({
     queryKey: ['tenant-requests', unitId],

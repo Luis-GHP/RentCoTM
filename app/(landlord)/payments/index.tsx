@@ -1,19 +1,20 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
-import { Avatar } from '../../components/shared/Avatar';
-import { StatusBadge } from '../../components/shared/StatusBadge';
-import { useAllPayments, PaymentRow } from '../../lib/query/payments';
-import { formatPHP, getMonthName } from '../../lib/format';
+import { useRouter } from 'expo-router';
+import { Avatar } from '../../../components/shared/Avatar';
+import { StatusBadge } from '../../../components/shared/StatusBadge';
+import { useAllPayments, PaymentRow } from '../../../lib/query/payments';
+import { formatPHP, getMonthName } from '../../../lib/format';
 
 const PRIMARY = '#1B3C34';
 
 type Filter = 'all' | 'pending' | 'paid' | 'overdue';
 
 const FILTERS: { key: Filter; label: string }[] = [
-  { key: 'all', label: 'All' },
+  { key: 'all',     label: 'All' },
   { key: 'pending', label: 'Pending' },
-  { key: 'paid', label: 'Confirmed' },
+  { key: 'paid',    label: 'Confirmed' },
   { key: 'overdue', label: 'Overdue' },
 ];
 
@@ -40,13 +41,14 @@ function groupByPeriod(rows: PaymentRow[]): { key: string; label: string; items:
   });
 }
 
-function PaymentItem({ row }: { row: PaymentRow }) {
+function PaymentItem({ row, onPress }: { row: PaymentRow; onPress: () => void }) {
   const name = primaryTenant(row);
   const unit = unitNumber(row);
 
   return (
     <TouchableOpacity
       activeOpacity={0.7}
+      onPress={onPress}
       style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}
     >
       <Avatar name={name} size={42} />
@@ -62,7 +64,7 @@ function PaymentItem({ row }: { row: PaymentRow }) {
   );
 }
 
-function PeriodGroup({ label, items }: { label: string; items: PaymentRow[] }) {
+function PeriodGroup({ label, items, onPressItem }: { label: string; items: PaymentRow[]; onPressItem: (id: string) => void }) {
   const collected = items.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.amount_paid), 0);
   const total = items.reduce((s, i) => s + Number(i.amount_due), 0);
 
@@ -73,7 +75,9 @@ function PeriodGroup({ label, items }: { label: string; items: PaymentRow[] }) {
         <Text style={{ fontSize: 12, color: '#6B7280' }}>{formatPHP(collected)} / {formatPHP(total)}</Text>
       </View>
       <View style={{ backgroundColor: '#fff', borderRadius: 14, paddingHorizontal: 16, borderWidth: 1, borderColor: '#F3F4F6' }}>
-        {items.map(row => <PaymentItem key={row.id} row={row} />)}
+        {items.map(row => (
+          <PaymentItem key={row.id} row={row} onPress={() => onPressItem(row.id)} />
+        ))}
       </View>
     </View>
   );
@@ -81,6 +85,7 @@ function PeriodGroup({ label, items }: { label: string; items: PaymentRow[] }) {
 
 export default function PaymentsScreen() {
   const [filter, setFilter] = useState<Filter>('all');
+  const router = useRouter();
   const { data: payments, isLoading, error } = useAllPayments();
 
   const filtered = (payments ?? []).filter(p => filter === 'all' || p.status === filter);
@@ -88,22 +93,14 @@ export default function PaymentsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
-      {/* Header */}
       <View style={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 0, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
         <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827', marginBottom: 12 }}>Payments</Text>
-
-        {/* Filter tabs */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 12 }}>
           {FILTERS.map(f => (
             <TouchableOpacity
               key={f.key}
               onPress={() => setFilter(f.key)}
-              style={{
-                paddingHorizontal: 16,
-                paddingVertical: 6,
-                borderRadius: 20,
-                backgroundColor: filter === f.key ? PRIMARY : '#F3F4F6',
-              }}
+              style={{ paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, backgroundColor: filter === f.key ? PRIMARY : '#F3F4F6' }}
               activeOpacity={0.75}
             >
               <Text style={{ fontSize: 13, fontWeight: '600', color: filter === f.key ? '#fff' : '#6B7280' }}>{f.label}</Text>
@@ -129,7 +126,14 @@ export default function PaymentsScreen() {
         </View>
       ) : (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
-          {groups.map(g => <PeriodGroup key={g.key} label={g.label} items={g.items} />)}
+          {groups.map(g => (
+            <PeriodGroup
+              key={g.key}
+              label={g.label}
+              items={g.items}
+              onPressItem={id => router.push(`/(landlord)/payments/${id}`)}
+            />
+          ))}
         </ScrollView>
       )}
     </SafeAreaView>

@@ -11,6 +11,7 @@ import {
   useTenantUtilityBills,
   useTenantActiveRequests,
 } from '../../lib/query/tenant-home';
+import { useTenant } from '../../lib/query/tenants';
 import { formatPHP, formatDate, getGreeting, getMonthName } from '../../lib/format';
 
 const PRIMARY = '#1B3C34';
@@ -138,10 +139,10 @@ function UtilityBills({ unitId }: { unitId: string }) {
                 <Text style={{ fontSize: 14, fontWeight: '600', color: '#111827' }}>
                   {getMonthName(b.period_month)} {b.period_year}
                 </Text>
-                <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 1 }}>{b.kwh_used} kWh</Text>
+                <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 1 }}>{b.kwh_consumed} kWh</Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827' }}>{formatPHP(b.total_amount)}</Text>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827' }}>{formatPHP(b.amount)}</Text>
                 <StatusBadge status={b.status} />
               </View>
             </View>
@@ -156,7 +157,7 @@ function MaintenanceSection({ unitId }: { unitId: string }) {
   const { data: requests, isLoading } = useTenantActiveRequests(unitId);
 
   const priorityColor: Record<string, string> = {
-    urgent: '#DC2626',
+    emergency: '#DC2626',
     high: '#EA580C',
     medium: '#B45309',
     low: '#6B7280',
@@ -204,6 +205,7 @@ export default function TenantHome() {
   const tenantId = profile?.tenant_id ?? undefined;
 
   const { data: lease, isLoading: leaseLoading } = useTenantActiveLease(tenantId);
+  const { data: tenant } = useTenant(tenantId);
 
   const unitNumber = (lease?.unit as any)?.unit_number ?? '—';
   const propertyName = (lease?.unit as any)?.property?.name ?? '';
@@ -218,7 +220,7 @@ export default function TenantHome() {
           <TouchableOpacity style={{ marginRight: 12 }} activeOpacity={0.7}>
             <Ionicons name="notifications-outline" size={24} color="rgba(255,255,255,0.85)" />
           </TouchableOpacity>
-          {profile && <Avatar name={profile.id} size={34} />}
+          {tenant && <Avatar name={tenant.name} size={34} />}
         </View>
         <Text style={{ fontSize: 20, fontWeight: '700', color: '#fff' }}>{greeting}! 👋</Text>
         {propertyName ? (

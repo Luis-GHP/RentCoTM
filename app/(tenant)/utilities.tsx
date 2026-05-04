@@ -1,13 +1,83 @@
-import { View, Text } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../lib/auth';
+import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
+import { EmptyState } from '../../components/shared/EmptyState';
+import { StatusBadge } from '../../components/shared/StatusBadge';
+import { useTenantActiveLease, useAllTenantBills } from '../../lib/query/tenant-home';
+import { formatPHP, getMonthName } from '../../lib/format';
+
+const UTILITY_ICON: Record<string, { icon: keyof typeof Ionicons.glyphMap; bg: string; color: string }> = {
+  electric: { icon: 'flash',        bg: '#FFFBEB', color: '#D97706' },
+  water:    { icon: 'water',        bg: '#EFF6FF', color: '#2563EB' },
+  internet: { icon: 'wifi',         bg: '#F5F3FF', color: '#7C3AED' },
+  other:    { icon: 'receipt',      bg: '#F3F4F6', color: '#6B7280' },
+};
 
 export default function TenantUtilities() {
+  const { profile } = useAuth();
+  const { data: lease, isLoading: leaseLoading } = useTenantActiveLease(profile?.tenant_id ?? undefined);
+  const unitId = (lease?.unit as any)?.id;
+  const { data: bills, isLoading: billsLoading } = useAllTenantBills(unitId);
+
+  const isLoading = leaseLoading || billsLoading;
+
+  if (isLoading) return <LoadingSpinner fullScreen />;
+
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-1 px-4 py-4">
-        <Text className="text-2xl font-bold text-gray-900">Utilities</Text>
-        <Text className="text-gray-500 text-sm mt-1">Coming soon</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
+      {/* Header */}
+      <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6', paddingHorizontal: 20, paddingVertical: 14 }}>
+        <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827' }}>Utility Bills</Text>
       </View>
+
+      {!lease ? (
+        <EmptyState icon="home-outline" title="No active lease" subtitle="Contact your landlord if you think this is an error." />
+      ) : (bills ?? []).length === 0 ? (
+        <EmptyState icon="flash-outline" title="No utility bills yet" subtitle="Bills will appear here once your landlord uploads them." />
+      ) : (
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F3F4F6', overflow: 'hidden' }}>
+            {bills!.map((b, i) => {
+              const style = UTILITY_ICON[b.utility_type] ?? UTILITY_ICON.other;
+              return (
+                <View
+                  key={b.id}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    padding: 16,
+                    borderBottomWidth: i < bills!.length - 1 ? 1 : 0,
+                    borderBottomColor: '#F3F4F6',
+                  }}
+                >
+                  {/* Icon */}
+                  <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: style.bg, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                    <Ionicons name={style.icon} size={18} color={style.color} />
+                  </View>
+
+                  {/* Info */}
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#111827', textTransform: 'capitalize' }}>
+                      {b.utility_type} · {getMonthName(b.period_month)} {b.period_year}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
+                      {b.provider}{b.kwh_consumed ? ` · ${b.kwh_consumed} kWh` : ''}
+                    </Text>
+                  </View>
+
+                  {/* Amount + badge */}
+                  <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827' }}>{formatPHP(b.amount)}</Text>
+                    <StatusBadge status={b.status} />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }

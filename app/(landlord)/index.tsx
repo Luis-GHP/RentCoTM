@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../../lib/auth';
 import { Avatar } from '../../components/shared/Avatar';
 import { useLandlordInfo, useMonthlySummary, usePortfolioOverview, useAlerts } from '../../lib/query/dashboard';
@@ -102,11 +103,13 @@ function AlertsSection() {
 }
 
 function QuickActions() {
+  const router = useRouter();
+
   const actions = [
-    { icon: 'business-outline' as const, label: 'Add Property' },
-    { icon: 'person-add-outline' as const, label: 'Add Tenant' },
-    { icon: 'cash-outline' as const, label: 'Record Payment' },
-    { icon: 'document-text-outline' as const, label: 'Upload Utility Bill' },
+    { icon: 'business-outline' as const,    label: 'Add Property',      route: '/(landlord)/properties/add' },
+    { icon: 'person-add-outline' as const,  label: 'Add Tenant',        route: '/(landlord)/tenants/invite' },
+    { icon: 'cash-outline' as const,        label: 'Record Payment',    route: '/(landlord)/payments/record' },
+    { icon: 'document-text-outline' as const, label: 'Upload Utility Bill', route: '/(landlord)/utilities' },
   ];
 
   return (
@@ -116,6 +119,7 @@ function QuickActions() {
         {actions.map(a => (
           <TouchableOpacity
             key={a.label}
+            onPress={() => router.push(a.route as any)}
             style={{ width: '47.5%', backgroundColor: '#F9FAFB', borderRadius: 14, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB' }}
             activeOpacity={0.7}
           >

@@ -295,6 +295,59 @@ Before running the schema:
 
 ---
 
+## Screen Inventory
+
+All screens and their file routes. This is the authoritative map of the app.
+
+### Auth
+
+| Screen | Route | Notes |
+|---|---|---|
+| Login | `/(auth)/login` | Email + password. Link to register. |
+| Register | `/(auth)/register` | Landlord only. Triggers email verification. |
+| Join (Tenant Invite) | `/(auth)/join` | Token from URL → validate → set email + password. |
+| Deactivated | `/(auth)/deactivated` | Shown when `is_active = false`. Sign out only. |
+
+### Landlord
+
+| Screen | Route | Notes |
+|---|---|---|
+| Dashboard | `/(landlord)/index` | Monthly Summary, Portfolio Overview, Alerts, Quick Actions |
+| Properties List | `/(landlord)/properties` | All properties with unit + occupancy summary |
+| Property Detail | `/(landlord)/properties/[id]` | Property info + units list |
+| Unit Detail | `/(landlord)/properties/[id]/units/[unitId]` | Current tenant, lease, status |
+| Tenants List | `/(landlord)/tenants` | Searchable. Filter: Active / Inactive |
+| Tenant Detail | `/(landlord)/tenants/[id]` | Profile, lease info, Payment History / Documents / Maintenance |
+| Invite Tenant | `/(landlord)/tenants/invite` | Generate link → share sheet |
+| Rent Increase | `/(landlord)/tenants/[id]/rent-increase` | New amount, effective date, RA 9653 warning if >7% |
+| Payments List | `/(landlord)/payments` | Filter: All / Pending / Confirmed / Overdue |
+| Payment Detail | `/(landlord)/payments/[id]` | Amount, status, receipt preview, Confirm / Mark as Unpaid |
+| Record Payment | `/(landlord)/payments/record` | Manual payment entry |
+| Utility Bills List | `/(landlord)/utilities` | Per-unit bills, monthly grouping |
+| Utility Bill Detail | `/(landlord)/utilities/[id]` | Parsed fields, confirm action |
+| Upload Utility Bill | `/(landlord)/utilities/upload` | PDF upload → parse → review → confirm |
+| Maintenance List | `/(landlord)/maintenance` | Filter: Open / In Progress / Resolved |
+| Maintenance Detail | `/(landlord)/maintenance/[id]` | Description, photos, status update |
+| Documents | `/(landlord)/documents` | Grouped by entity type |
+| Settings / More | `/(landlord)/more` | Profile, notifications, sign out |
+
+### Tenant
+
+| Screen | Route | Notes |
+|---|---|---|
+| Home | `/(tenant)/index` | Green hero header, Rent Status, Recent Payments, Utilities, Maintenance |
+| Payments List | `/(tenant)/payments` | Own payment history |
+| Payment Detail | `/(tenant)/payments/[id]` | View payment, upload receipt |
+| Utility Bills | `/(tenant)/utilities` | Own bills only |
+| Utility Bill Detail | `/(tenant)/utilities/[id]` | View parsed bill, upload PDF |
+| Maintenance List | `/(tenant)/maintenance` | Own requests |
+| Maintenance Detail | `/(tenant)/maintenance/[id]` | Status, landlord notes |
+| Submit Maintenance | `/(tenant)/maintenance/new` | Description + photo upload |
+| Documents | `/(tenant)/documents` | Own documents |
+| Profile / More | `/(tenant)/more` | Contact info, lease summary, sign out |
+
+---
+
 ## Key RPC Functions Reference
 
 | Function | Purpose |
