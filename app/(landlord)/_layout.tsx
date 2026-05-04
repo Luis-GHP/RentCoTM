@@ -54,6 +54,9 @@ export default function LandlordLayout() {
           ),
         }}
       />
+      <Tabs.Screen name="properties/add"                options={{ href: null }} />
+      <Tabs.Screen name="properties/[id]"               options={{ href: null }} />
+      <Tabs.Screen name="properties/[id]/units/[unitId]" options={{ href: null }} />
       <Tabs.Screen
         name="payments"
         options={{
@@ -63,6 +66,8 @@ export default function LandlordLayout() {
           ),
         }}
       />
+      <Tabs.Screen name="payments/record" options={{ href: null }} />
+      <Tabs.Screen name="payments/[id]"   options={{ href: null }} />
       <Tabs.Screen
         name="maintenance"
         options={{
@@ -72,6 +77,12 @@ export default function LandlordLayout() {
           ),
         }}
       />
+      <Tabs.Screen name="maintenance/[id]"  options={{ href: null }} />
+      <Tabs.Screen name="tenants"           options={{ href: null }} />
+      <Tabs.Screen name="tenants/[id]"      options={{ href: null }} />
+      <Tabs.Screen name="tenants/invite"    options={{ href: null }} />
+      <Tabs.Screen name="utilities"         options={{ href: null }} />
+      <Tabs.Screen name="utilities/[id]"    options={{ href: null }} />
       <Tabs.Screen
         name="more"
         options={{

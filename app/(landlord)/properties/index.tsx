@@ -2,11 +2,12 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, ActivityIndicator 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { useProperties, PropertyWithUnits } from '../../lib/query/properties';
+import { useRouter } from 'expo-router';
+import { useProperties, PropertyWithUnits } from '../../../lib/query/properties';
 
 const PRIMARY = '#1B3C34';
 
-function PropertyCard({ property }: { property: PropertyWithUnits }) {
+function PropertyCard({ property, onPress }: { property: PropertyWithUnits; onPress: () => void }) {
   const units = property.unit ?? [];
   const total = units.length;
   const occupied = units.filter(u => u.status === 'occupied').length;
@@ -16,13 +17,11 @@ function PropertyCard({ property }: { property: PropertyWithUnits }) {
   return (
     <TouchableOpacity
       activeOpacity={0.75}
+      onPress={onPress}
       style={{ backgroundColor: '#fff', borderRadius: 16, marginBottom: 14, borderWidth: 1, borderColor: '#F3F4F6', overflow: 'hidden' }}
     >
-      {/* Color banner */}
       <View style={{ height: 6, backgroundColor: PRIMARY }} />
-
       <View style={{ padding: 16 }}>
-        {/* Name + chevron */}
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 }}>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 16, fontWeight: '700', color: '#111827' }} numberOfLines={1}>{property.name}</Text>
@@ -30,8 +29,6 @@ function PropertyCard({ property }: { property: PropertyWithUnits }) {
           </View>
           <Ionicons name="chevron-forward" size={18} color="#9CA3AF" style={{ marginTop: 2 }} />
         </View>
-
-        {/* Stats row */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 12 }}>
           <Pill icon="grid-outline" value={`${total} units`} />
           <Pill icon="home-outline" value={`${occupied} occupied`} color="#15803D" />
@@ -67,6 +64,7 @@ function OccupancyBar({ pct }: { pct: number }) {
 
 export default function PropertiesScreen() {
   const [search, setSearch] = useState('');
+  const router = useRouter();
   const { data: properties, isLoading, error } = useProperties();
 
   const filtered = (properties ?? []).filter(p =>
@@ -76,10 +74,10 @@ export default function PropertiesScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
-      {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
         <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: '#111827' }}>Properties</Text>
         <TouchableOpacity
+          onPress={() => router.push('/(landlord)/properties/add')}
           style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center' }}
           activeOpacity={0.8}
         >
@@ -87,7 +85,6 @@ export default function PropertiesScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Search */}
       <View style={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 6, backgroundColor: '#fff' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 10, paddingHorizontal: 12, height: 42 }}>
           <Ionicons name="search-outline" size={18} color="#9CA3AF" />
@@ -128,7 +125,13 @@ export default function PropertiesScreen() {
       ) : (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
           <Text style={{ fontSize: 13, color: '#6B7280', marginBottom: 12 }}>{filtered.length} {filtered.length === 1 ? 'property' : 'properties'}</Text>
-          {filtered.map(p => <PropertyCard key={p.id} property={p} />)}
+          {filtered.map(p => (
+            <PropertyCard
+              key={p.id}
+              property={p}
+              onPress={() => router.push(`/(landlord)/properties/${p.id}`)}
+            />
+          ))}
         </ScrollView>
       )}
     </SafeAreaView>
