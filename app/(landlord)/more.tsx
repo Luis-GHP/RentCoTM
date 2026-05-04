@@ -1,21 +1,66 @@
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../lib/auth';
+import { Avatar } from '../../components/shared/Avatar';
+import { Card } from '../../components/shared/Card';
+import { ListRow } from '../../components/shared/ListRow';
+import { Button } from '../../components/shared/Button';
+import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
+import { useLandlordInfo } from '../../lib/query/dashboard';
 
 export default function MoreScreen() {
   const { signOut } = useAuth();
+  const { data: landlord, isLoading } = useLandlordInfo();
+
+  if (isLoading) return <LoadingSpinner fullScreen />;
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-1 px-4 py-4">
-        <Text className="text-2xl font-bold text-gray-900 mb-6">More</Text>
-        <TouchableOpacity
-          className="border border-red-200 rounded-xl py-3 px-4"
-          onPress={signOut}
-        >
-          <Text className="text-red-600 font-medium">Sign Out</Text>
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
+      <ScrollView contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false}>
+        <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827', marginBottom: 16 }}>More</Text>
+
+        {/* Profile card */}
+        <Card style={{ marginBottom: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+            <Avatar name={landlord?.name ?? 'L'} size={56} />
+            <View style={{ marginLeft: 14, flex: 1 }}>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: '#111827' }}>{landlord?.name ?? '—'}</Text>
+              <Text style={{ fontSize: 13, color: '#6B7280', marginTop: 2 }}>Landlord</Text>
+            </View>
+          </View>
+          <ListRow label="Email"  value={landlord?.email ?? '—'} showDivider />
+          <ListRow label="Phone"  value={landlord?.phone ?? 'Not set'} showDivider={false} />
+        </Card>
+
+        {/* Settings */}
+        <Card padded={false} style={{ marginBottom: 16 }}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}
+          >
+            <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#E8F5F0', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+              <Ionicons name="notifications-outline" size={18} color="#1B3C34" />
+            </View>
+            <Text style={{ flex: 1, fontSize: 15, color: '#111827' }}>Notifications</Text>
+            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}
+          >
+            <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#E8F5F0', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+              <Ionicons name="information-circle-outline" size={18} color="#1B3C34" />
+            </View>
+            <Text style={{ flex: 1, fontSize: 15, color: '#111827' }}>About RentCo</Text>
+            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+          </TouchableOpacity>
+        </Card>
+
+        {/* Sign out */}
+        <Button label="Sign Out" variant="danger" onPress={signOut} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
