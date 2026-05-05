@@ -1,6 +1,7 @@
 import { View, Text, Image, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../../lib/auth';
 import { Avatar } from '../../components/shared/Avatar';
 import { StatusBadge } from '../../components/shared/StatusBadge';
@@ -17,6 +18,7 @@ import { formatPHP, formatDate, getGreeting, getMonthName } from '../../lib/form
 const PRIMARY = '#1B3C34';
 
 function RentCard({ leaseId, unitNumber, monthlyRent }: { leaseId: string; unitNumber: string; monthlyRent: number }) {
+  const router = useRouter();
   const { data: payment, isLoading } = useCurrentRentPayment(leaseId);
   const now = new Date();
   const period = `${getMonthName(now.getMonth() + 1)} ${now.getFullYear()}`;
@@ -24,15 +26,6 @@ function RentCard({ leaseId, unitNumber, monthlyRent }: { leaseId: string; unitN
   const status = payment?.status ?? 'unpaid';
   const amountDue = payment ? Number(payment.amount_due) : monthlyRent;
   const amountPaid = Number(payment?.amount_paid ?? 0);
-
-  const statusColors: Record<string, { bg: string; text: string }> = {
-    paid:    { bg: '#F0FDF4', text: '#15803D' },
-    pending: { bg: '#FFFBEB', text: '#B45309' },
-    overdue: { bg: '#FEF2F2', text: '#DC2626' },
-    unpaid:  { bg: '#F9FAFB', text: '#6B7280' },
-    partial: { bg: '#FFFBEB', text: '#B45309' },
-  };
-  const sc = statusColors[status] ?? statusColors.unpaid;
 
   return (
     <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#F3F4F6' }}>
@@ -64,6 +57,7 @@ function RentCard({ leaseId, unitNumber, monthlyRent }: { leaseId: string; unitN
 
       {status !== 'paid' && (
         <TouchableOpacity
+          onPress={() => router.push('/(tenant)/payments')}
           style={{ marginTop: 16, backgroundColor: PRIMARY, borderRadius: 10, paddingVertical: 12, alignItems: 'center' }}
           activeOpacity={0.85}
         >
@@ -75,13 +69,16 @@ function RentCard({ leaseId, unitNumber, monthlyRent }: { leaseId: string; unitN
 }
 
 function RecentPayments({ leaseId }: { leaseId: string }) {
+  const router = useRouter();
   const { data: payments, isLoading } = useRecentTenantPayments(leaseId);
 
   return (
     <View style={{ marginBottom: 16 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
         <Text style={{ flex: 1, fontSize: 15, fontWeight: '700', color: '#111827' }}>Recent Payments</Text>
-        <TouchableOpacity><Text style={{ fontSize: 13, color: PRIMARY, fontWeight: '600' }}>View all</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/(tenant)/payments')} activeOpacity={0.7}>
+          <Text style={{ fontSize: 13, color: PRIMARY, fontWeight: '600' }}>View all</Text>
+        </TouchableOpacity>
       </View>
       <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F3F4F6', overflow: 'hidden' }}>
         {isLoading ? (
@@ -92,7 +89,12 @@ function RecentPayments({ leaseId }: { leaseId: string }) {
           </View>
         ) : (
           (payments ?? []).map((p, i) => (
-            <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: i < (payments!.length - 1) ? 1 : 0, borderBottomColor: '#F3F4F6' }}>
+            <TouchableOpacity
+              key={p.id}
+              onPress={() => router.push(`/(tenant)/payments/${p.id}`)}
+              activeOpacity={0.7}
+              style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: i < (payments!.length - 1) ? 1 : 0, borderBottomColor: '#F3F4F6' }}
+            >
               <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#F0FDF4', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
                 <Ionicons name="checkmark-circle" size={20} color="#15803D" />
               </View>
@@ -105,7 +107,7 @@ function RecentPayments({ leaseId }: { leaseId: string }) {
                 )}
               </View>
               <Text style={{ fontSize: 14, fontWeight: '700', color: '#15803D' }}>{formatPHP(p.amount_paid)}</Text>
-            </View>
+            </TouchableOpacity>
           ))
         )}
       </View>
@@ -114,13 +116,16 @@ function RecentPayments({ leaseId }: { leaseId: string }) {
 }
 
 function UtilityBills({ unitId }: { unitId: string }) {
+  const router = useRouter();
   const { data: bills, isLoading } = useTenantUtilityBills(unitId);
 
   return (
     <View style={{ marginBottom: 16 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
         <Text style={{ flex: 1, fontSize: 15, fontWeight: '700', color: '#111827' }}>Utility Bills</Text>
-        <TouchableOpacity><Text style={{ fontSize: 13, color: PRIMARY, fontWeight: '600' }}>View all</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/(tenant)/utilities')} activeOpacity={0.7}>
+          <Text style={{ fontSize: 13, color: PRIMARY, fontWeight: '600' }}>View all</Text>
+        </TouchableOpacity>
       </View>
       <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F3F4F6', overflow: 'hidden' }}>
         {isLoading ? (
@@ -131,7 +136,12 @@ function UtilityBills({ unitId }: { unitId: string }) {
           </View>
         ) : (
           (bills ?? []).map((b, i) => (
-            <View key={b.id} style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: i < (bills!.length - 1) ? 1 : 0, borderBottomColor: '#F3F4F6' }}>
+            <TouchableOpacity
+              key={b.id}
+              onPress={() => router.push(`/(tenant)/utilities/${b.id}`)}
+              activeOpacity={0.7}
+              style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: i < (bills!.length - 1) ? 1 : 0, borderBottomColor: '#F3F4F6' }}
+            >
               <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
                 <Ionicons name="flash-outline" size={18} color="#1D4ED8" />
               </View>
@@ -145,7 +155,7 @@ function UtilityBills({ unitId }: { unitId: string }) {
                 <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827' }}>{formatPHP(b.amount)}</Text>
                 <StatusBadge status={b.status} />
               </View>
-            </View>
+            </TouchableOpacity>
           ))
         )}
       </View>
@@ -154,6 +164,7 @@ function UtilityBills({ unitId }: { unitId: string }) {
 }
 
 function MaintenanceSection({ unitId }: { unitId: string }) {
+  const router = useRouter();
   const { data: requests, isLoading } = useTenantActiveRequests(unitId);
 
   const priorityColor: Record<string, string> = {
@@ -168,6 +179,7 @@ function MaintenanceSection({ unitId }: { unitId: string }) {
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
         <Text style={{ flex: 1, fontSize: 15, fontWeight: '700', color: '#111827' }}>Maintenance</Text>
         <TouchableOpacity
+          onPress={() => router.push('/(tenant)/maintenance/new')}
           style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: `${PRIMARY}15`, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5 }}
           activeOpacity={0.75}
         >
@@ -185,7 +197,12 @@ function MaintenanceSection({ unitId }: { unitId: string }) {
           </View>
         ) : (
           (requests ?? []).map((r, i) => (
-            <TouchableOpacity key={r.id} activeOpacity={0.7} style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: i < (requests!.length - 1) ? 1 : 0, borderBottomColor: '#F3F4F6' }}>
+            <TouchableOpacity
+              key={r.id}
+              onPress={() => router.push(`/(tenant)/maintenance/${r.id}`)}
+              activeOpacity={0.7}
+              style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: i < (requests!.length - 1) ? 1 : 0, borderBottomColor: '#F3F4F6' }}
+            >
               <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: priorityColor[r.priority] ?? '#6B7280', marginRight: 12 }} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 14, fontWeight: '600', color: '#111827' }} numberOfLines={1}>{r.title}</Text>
