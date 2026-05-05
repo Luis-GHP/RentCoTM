@@ -362,6 +362,48 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 
 ---
 
+### Tenant Detail `/(landlord)/tenants/[id]`
+
+**Header:** Back arrow + tenant name + pencil icon → edit profile (name, phone, email)
+
+**Inactive banner:** Full-width amber banner below header when `is_active = false`
+
+**Profile card:**
+- Large avatar (56px initials), full name, "Tenant" role label
+- Phone, email
+
+**Government ID card (separate card below profile):**
+- ID type label + ID number
+- Front + back photo thumbnails — tap to full screen view
+- If no ID: camera icon + "Add Government ID" CTA
+- CTA flow: (1) pick ID type, (2) enter ID number, (3) take photo or pick from gallery for front, (4) optional back photo, (5) save
+- ID types: PhilSys (National ID), UMID, SSS, PhilHealth, Passport, Driver's License, Voter's ID
+- Photos stored in `document` table: `entity_type = 'tenant'`, `entity_id = tenant.id`, `doc_type = 'gov_id_front'` / `'gov_id_back'`
+- `gov_id_type` and `gov_id_number` stored on `tenant` table fields
+
+**Lease card:**
+- Unit + property name, start/end dates, monthly rent, security deposit, deposit balance, RA 9653 flag
+- "Rent Increase" link at bottom of card → `/(landlord)/tenants/[id]/rent-increase`
+
+**In-screen tab bar (3 tabs):**
+- Payment History — all payments for this tenant's active lease, most recent first. Each row: period, amount, status badge, OR number if paid. Tappable → `/(landlord)/payments/[id]`
+- Maintenance — all requests from this tenant. Each row: title, category icon, priority dot, status badge, date. Tappable → `/(landlord)/maintenance/[id]`
+- Documents — all other docs for this tenant. Each row: doc type, filename, upload date. Tappable → full screen viewer
+
+**Bottom actions:**
+- "Deactivate Tenant" — only when `is_active = true`. Destructive alert confirmation. Sets `user_profile.is_active = false`
+- "Reactivate Tenant" — only when `is_active = false`
+
+| Decision | Recommendation |
+|---|---|
+| No active lease | Still show profile + ID card. Lease card shows "No active lease" |
+| Past leases | Post-MVP — only active lease shown |
+| Front + back ID | Both allowed — two separate document rows |
+| Gov ID types | PhilSys, UMID, SSS, PhilHealth, Passport, Driver's License, Voter's ID |
+| Deactivate effect | Route guard on `(tenant)/_layout.tsx` checks `is_active` on every load — tenant blocked on next app open |
+
+---
+
 ### Maintenance List `/(landlord)/maintenance`
 
 | Gap | Recommendation | Priority |
