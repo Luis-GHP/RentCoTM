@@ -1,6 +1,7 @@
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../../../lib/auth';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
 import { EmptyState } from '../../../components/shared/EmptyState';
@@ -16,6 +17,7 @@ const UTILITY_ICON: Record<string, { icon: keyof typeof Ionicons.glyphMap; bg: s
 };
 
 export default function TenantUtilities() {
+  const router = useRouter();
   const { profile } = useAuth();
   const { data: lease, isLoading: leaseLoading } = useTenantActiveLease(profile?.tenant_id ?? undefined);
   const unitId = (lease?.unit as any)?.id;
@@ -28,22 +30,27 @@ export default function TenantUtilities() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
       {/* Header */}
-      <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6', paddingHorizontal: 20, paddingVertical: 14 }}>
-        <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827' }}>Utility Bills</Text>
+      <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6', paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', alignItems: 'center' }}>
+        <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: '#111827' }}>Utility Bills</Text>
+        <TouchableOpacity onPress={() => router.push('/(tenant)/utilities')} activeOpacity={0.7}>
+          <Ionicons name="cloud-upload-outline" size={24} color="#1B3C34" />
+        </TouchableOpacity>
       </View>
 
       {!lease ? (
-        <EmptyState icon="home-outline" title="No active lease" subtitle="Contact your landlord if you think this is an error." />
+        <EmptyState icon="home-outline" title="No Active Lease" subtitle="Contact your landlord if you think this is an error." />
       ) : (bills ?? []).length === 0 ? (
-        <EmptyState icon="flash-outline" title="No utility bills yet" subtitle="Bills will appear here once your landlord uploads them." />
+        <EmptyState icon="flash-outline" title="No Utility Bills Yet" subtitle="Bills will appear here once your landlord uploads them." />
       ) : (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false}>
           <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F3F4F6', overflow: 'hidden' }}>
             {bills!.map((b, i) => {
               const style = UTILITY_ICON[b.utility_type] ?? UTILITY_ICON.other;
               return (
-                <View
+                <TouchableOpacity
                   key={b.id}
+                  onPress={() => router.push(`/(tenant)/utilities/${b.id}`)}
+                  activeOpacity={0.7}
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
@@ -72,7 +79,7 @@ export default function TenantUtilities() {
                     <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827' }}>{formatPHP(b.amount)}</Text>
                     <StatusBadge status={b.status} />
                   </View>
-                </View>
+                </TouchableOpacity>
               );
             })}
           </View>
