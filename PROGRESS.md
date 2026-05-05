@@ -432,6 +432,77 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 
 ---
 
+### Utilities List `/(landlord)/utilities`
+
+**Header:** "Utilities" + upload icon top right → `/(landlord)/utilities/upload`
+
+**Filter tabs:** All / Pending / Confirmed
+
+**List:** Grouped by unit (unit number + property name as section header), sorted by period descending within each unit
+
+**Each bill row:** Utility type icon (flash=electric, water-drop=water, wifi=internet), period, amount, status badge, chevron → `/(landlord)/utilities/[id]`
+
+**Empty state:** Icon + "No Utility Bills Yet" + "Tap the upload icon to add your first bill"
+
+| Decision | Recommendation |
+|---|---|
+| Group by unit or by month? | Group by unit — landlord processes one unit's bills at a time |
+| Filter by utility type? | Post-MVP — All/Pending/Confirmed is enough for now |
+| Who can upload? | Both sides. Landlord upload = can confirm immediately. Tenant upload = needs landlord confirmation |
+
+---
+
+### Utility Bill Detail `/(landlord)/utilities/[id]`
+
+**Header:** Back arrow + "Utility Bill" + unit number subtitle + status badge
+
+**Bill info card:** Utility type icon + label, provider name, billing period, kWh consumed, rate per kWh, total amount
+
+**PDF row:** If `bill_pdf_url` exists — "View Original Bill" tappable row opens PDF. If none — "No PDF uploaded"
+
+**Uploaded by row:** Shows who uploaded (landlord or tenant name)
+
+**Confirm button:** Full-width primary — "Confirm Bill" — only when unconfirmed. Alert confirmation first. Sets `confirmed_by` and `confirmed_at`
+
+**Confirmed state:** Shows confirmed by + confirmed date. Confirm button hidden.
+
+| Decision | Recommendation |
+|---|---|
+| Edit after confirming? | No — confirmed bills are locked |
+| Edit before confirming? | Yes — pencil icon on the bill info card |
+| Tenant-uploaded bills | Show "Uploaded by [tenant name]" + "Pending your review" amber banner |
+
+---
+
+### Upload Utility Bill `/(landlord)/utilities/upload`
+
+**Header:** Back arrow + "Upload Utility Bill"
+
+**Step 1 — Pick PDF:**
+- Large dashed upload area — "Tap to select PDF"
+- Document picker (PDF only)
+- On select: show filename + file size + "Parse with AI" button
+- "Enter manually instead" link — always visible, skips AI
+
+**Step 2 — Parsing:**
+- "Analyzing your bill…" loading spinner
+- If Anthropic API down: amber banner "AI parsing unavailable" → skip to manual entry form
+- On success: go to Step 3
+
+**Step 3 — Review parsed fields:**
+- All parsed fields shown and editable: utility type, provider, period, kWh, rate, amount
+- Confidence score label on each field — amber warning if below 80%: "Please review carefully"
+- Unit picker — required, assign to a specific unit
+- "Save Bill" button
+
+| Decision | Recommendation |
+|---|---|
+| Confidence score shown? | Yes — "X% confident" label per field. Below 80% = amber warning |
+| PDF not a utility bill | Error: "Couldn't parse this document. Please enter details manually." |
+| Unit assignment required? | Yes — cannot save without selecting a unit |
+
+---
+
 ### Maintenance List `/(landlord)/maintenance`
 
 | Gap | Recommendation | Priority |
