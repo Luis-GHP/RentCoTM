@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../../lib/auth';
 import { FilterTabs } from '../../../components/shared/FilterTabs';
@@ -32,11 +33,14 @@ const CATEGORY_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
   structural: 'construct-outline',
   appliance:  'tv-outline',
   pest:       'bug-outline',
+  cleaning:   'sparkles-outline',
+  internet:   'wifi-outline',
   other:      'hammer-outline',
 };
 
 export default function TenantMaintenance() {
   const [filter, setFilter] = useState<Filter>('active');
+  const router = useRouter();
   const { profile } = useAuth();
   const { data: lease, isLoading: leaseLoading } = useTenantActiveLease(profile?.tenant_id ?? undefined);
   const unitId = (lease?.unit as any)?.id;
@@ -59,6 +63,7 @@ export default function TenantMaintenance() {
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 4 }}>
           <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: '#111827' }}>Maintenance</Text>
           <TouchableOpacity
+            onPress={() => router.push('/(tenant)/maintenance/new')}
             activeOpacity={0.75}
             style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: `${PRIMARY}15`, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 }}
           >
@@ -74,7 +79,7 @@ export default function TenantMaintenance() {
       ) : requests.length === 0 ? (
         <EmptyState
           icon={filter === 'active' ? 'checkmark-done-circle-outline' : 'construct-outline'}
-          title={filter === 'active' ? 'No active requests' : 'No resolved requests'}
+          title={filter === 'active' ? 'No Active Requests' : 'No Resolved Requests'}
           subtitle={filter === 'active' ? 'Tap New Request to report an issue.' : 'Resolved requests will appear here.'}
         />
       ) : (
@@ -86,6 +91,7 @@ export default function TenantMaintenance() {
                 <TouchableOpacity
                   key={r.id}
                   activeOpacity={0.7}
+                  onPress={() => router.push(`/(tenant)/maintenance/${r.id}`)}
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
