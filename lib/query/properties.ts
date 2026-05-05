@@ -1,5 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
+
+export type PropertyType = 'apartment' | 'house' | 'condo' | 'boarding_house' | 'commercial';
+export type ElectricProvider = 'meralco' | 'veco' | 'dlpc' | 'beneco' | 'neeco' | 'manual';
 
 export type PropertyWithUnits = {
   id: string;
@@ -21,6 +24,50 @@ export function useProperties() {
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data as PropertyWithUnits[];
+    },
+  });
+}
+
+export function useCreateProperty() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: {
+      name: string;
+      address: string;
+      type: PropertyType;
+      electricProvider: ElectricProvider;
+      defaultRatePerKwh: number | null;
+    }) => {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error('You must be signed in to add a property.');
+
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profile')
+        .select('landlord_id')
+        .eq('id', user.id)
+        .single();
+      if (profileError) throw profileError;
+      if (!profile?.landlord_id) throw new Error('Landlord profile not found.');
+
+      const { data, error } = await supabase
+        .from('property')
+        .insert({
+          landlord_id: profile.landlord_id,
+          name: params.name.trim(),
+          address: params.address.trim(),
+          type: params.type,
+          electric_provider: params.electricProvider,
+          default_rate_per_kwh: params.defaultRatePerKwh,
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      return data.id as string;
+    },
+    onSuccess: id => {
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      queryClient.invalidateQueries({ queryKey: ['property', id] });
     },
   });
 }
