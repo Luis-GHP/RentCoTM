@@ -9,7 +9,7 @@ export type MaintenanceRow = {
   status: string;
   created_at: string;
   resolved_at: string | null;
-  unit: { unit_number: string; property: { name: string } | null } | null;
+  unit: { id: string; unit_number: string; property: { name: string } | null } | null;
 };
 
 type Filter = 'all' | 'open' | 'in_progress' | 'resolved';
@@ -22,7 +22,7 @@ export function useMaintenanceRequests(filter: Filter = 'all') {
         .from('maintenance_request')
         .select(`
           id, title, category, priority, status, created_at, resolved_at,
-          unit:unit_id (unit_number, property:property_id (name))
+          unit:unit_id (id, unit_number, property:property_id (name))
         `)
         .order('created_at', { ascending: false });
 

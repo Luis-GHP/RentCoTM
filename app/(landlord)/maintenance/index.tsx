@@ -1,16 +1,14 @@
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { FilterTabs } from '../../../components/shared/FilterTabs';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
 import { EmptyState } from '../../../components/shared/EmptyState';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
-import { useMaintenanceRequests, MaintenanceRow } from '../../../lib/query/maintenance';
+import { useMaintenanceRequests } from '../../../lib/query/maintenance';
 import { formatDate } from '../../../lib/format';
-
-const PRIMARY = '#1B3C34';
 
 type Filter = 'all' | 'open' | 'in_progress' | 'resolved';
 
@@ -40,7 +38,9 @@ const CATEGORY_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
 export default function MaintenanceScreen() {
   const [filter, setFilter] = useState<Filter>('all');
   const router = useRouter();
-  const { data: requests, isLoading } = useMaintenanceRequests(filter);
+  const { unitId } = useLocalSearchParams<{ unitId?: string }>();
+  const { data: requests, isLoading, error } = useMaintenanceRequests(filter);
+  const filteredRequests = (requests ?? []).filter(r => !unitId || r.unit?.id === unitId);
 
   if (isLoading) return <LoadingSpinner fullScreen />;
 
@@ -53,16 +53,22 @@ export default function MaintenanceScreen() {
         <FilterTabs tabs={FILTERS} active={filter} onChange={setFilter} />
       </View>
 
-      {(requests ?? []).length === 0 ? (
+      {error ? (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+          <Ionicons name="alert-circle-outline" size={40} color="#9CA3AF" />
+          <Text style={{ fontSize: 16, fontWeight: '600', color: '#374151', marginTop: 12, textAlign: 'center' }}>{"Couldn't load requests right now"}</Text>
+          <Text style={{ fontSize: 14, color: '#9CA3AF', marginTop: 4, textAlign: 'center' }}>Pull down to try again</Text>
+        </View>
+      ) : filteredRequests.length === 0 ? (
         <EmptyState
           icon="construct-outline"
-          title="No requests"
-          subtitle={filter === 'all' ? 'Maintenance requests will appear here.' : `No ${filter.replace('_', ' ')} requests.`}
+          title="No Requests Yet"
+          subtitle={unitId ? 'This unit has no matching maintenance requests.' : filter === 'all' ? 'Maintenance requests will appear here.' : `No ${filter.replace('_', ' ')} requests.`}
         />
       ) : (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false}>
           <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F3F4F6', overflow: 'hidden' }}>
-            {requests!.map((r, i) => {
+            {filteredRequests.map((r, i) => {
               const icon = CATEGORY_ICON[r.category] ?? 'hammer-outline';
               return (
                 <TouchableOpacity
@@ -73,7 +79,7 @@ export default function MaintenanceScreen() {
                     flexDirection: 'row',
                     alignItems: 'center',
                     padding: 16,
-                    borderBottomWidth: i < requests!.length - 1 ? 1 : 0,
+                    borderBottomWidth: i < filteredRequests.length - 1 ? 1 : 0,
                     borderBottomColor: '#F3F4F6',
                   }}
                 >
