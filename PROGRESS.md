@@ -343,6 +343,25 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 
 ---
 
+### Tenants List `/(landlord)/tenants`
+
+**Should have:**
+- Header: "Tenants" title + person-add icon top right → `/(landlord)/tenants/invite`
+- Search bar below header — filters by tenant name, unit number, or property name (client-side)
+- Filter tabs: Active / Inactive
+- Each row: avatar (initials), tenant name, unit number + property name, monthly rent, status badge, chevron → `/(landlord)/tenants/[id]`
+- Empty state (no tenants): icon + "No Tenants Yet" + "Tap the invite icon to add your first tenant"
+- Empty state (no search results): "No tenants match your search"
+- Loading state
+
+| Decision | Recommendation |
+|---|---|
+| Inactive tenant — show unit? | Yes — show last known unit so landlord remembers who they are |
+| Monthly rent on row? | Yes — landlords mentally group tenants by rent amount |
+| Inactive tenants tappable? | Yes — same profile screen with a clear "Inactive" banner at the top of tenant detail |
+
+---
+
 ### Maintenance List `/(landlord)/maintenance`
 
 | Gap | Recommendation | Priority |
