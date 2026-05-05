@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from '../../../components/shared/Avatar';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
 import { useAllPayments, PaymentRow } from '../../../lib/query/payments';
@@ -94,7 +95,16 @@ export default function PaymentsScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
       <View style={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 0, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
-        <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827', marginBottom: 12 }}>Payments</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+          <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: '#111827' }}>Payments</Text>
+          <TouchableOpacity
+            onPress={() => router.push('/(landlord)/payments/record')}
+            style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center' }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="add" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 12 }}>
           {FILTERS.map(f => (
             <TouchableOpacity
@@ -115,7 +125,9 @@ export default function PaymentsScreen() {
         </View>
       ) : error ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-          <Text style={{ color: '#DC2626', fontSize: 14 }}>Failed to load payments</Text>
+          <Ionicons name="alert-circle-outline" size={40} color="#9CA3AF" />
+          <Text style={{ fontSize: 16, fontWeight: '600', color: '#374151', marginTop: 12, textAlign: 'center' }}>{"Couldn't load payments right now"}</Text>
+          <Text style={{ fontSize: 14, color: '#9CA3AF', marginTop: 4, textAlign: 'center' }}>Pull down to try again</Text>
         </View>
       ) : groups.length === 0 ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
