@@ -361,6 +361,107 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 
 ---
 
+## Pending Fixes — Ready to Build
+
+> Everything in this section has a known, agreed fix. No further discussion needed before implementing. Execute in the order listed.
+
+---
+
+### Step A — Restructure Tenant Tab Screens into Directories
+
+Currently `(tenant)/payments.tsx`, `(tenant)/utilities.tsx`, `(tenant)/maintenance.tsx` are flat files. They need to become directories so detail screens can live inside them as nested Stack routes.
+
+**What to do:**
+1. Create `app/(tenant)/payments/_layout.tsx` — Stack, `headerShown: false`
+2. Move content of `payments.tsx` → `payments/index.tsx`, delete `payments.tsx`
+3. Create `app/(tenant)/utilities/_layout.tsx` — Stack, `headerShown: false`
+4. Move content of `utilities.tsx` → `utilities/index.tsx`, delete `utilities.tsx`
+5. Create `app/(tenant)/maintenance/_layout.tsx` — Stack, `headerShown: false`
+6. Move content of `maintenance.tsx` → `maintenance/index.tsx`, delete `maintenance.tsx`
+7. `(tenant)/_layout.tsx` tab names stay the same (`payments`, `utilities`, `maintenance`) — Expo Router resolves directory automatically
+
+**Create these stub detail screens at the same time:**
+- `app/(tenant)/payments/[id].tsx` — back button + "Payment Detail — coming soon"
+- `app/(tenant)/utilities/[id].tsx` — back button + "Utility Bill — coming soon"
+- `app/(tenant)/maintenance/[id].tsx` — back button + "Maintenance Request — coming soon"
+- `app/(tenant)/maintenance/new.tsx` — back button + "New Request — coming soon"
+
+---
+
+### Step B — Wire All Dead Buttons on Tenant Home `(tenant)/index.tsx`
+
+All changes are in `app/(tenant)/index.tsx`. Add `useRouter` if not already imported.
+
+| Element | Fix |
+|---|---|
+| "Upload Payment Receipt" button | `router.push('/(tenant)/payments')` |
+| "View all" on Recent Payments | `router.push('/(tenant)/payments')` |
+| "View all" on Utility Bills | `router.push('/(tenant)/utilities')` |
+| "New Request" maintenance button | `router.push('/(tenant)/maintenance/new')` |
+| Individual payment row `onPress` | `router.push('/(tenant)/payments/${p.id}')` |
+| Individual utility bill row | Wrap in `TouchableOpacity`, `router.push('/(tenant)/utilities/${b.id}')` |
+| Individual maintenance row | Already has `TouchableOpacity`, add `router.push('/(tenant)/maintenance/${r.id}')` |
+
+---
+
+### Step C — Tenant Payments List `(tenant)/payments/index.tsx`
+
+1. **Make rows tappable** — wrap each payment row in `TouchableOpacity`, `onPress={() => router.push('/(tenant)/payments/${p.id}')}`
+2. **Add filter tabs** — same pattern as landlord payments list: All / Pending / Confirmed / Overdue. Filter `payments` array client-side by `status`
+3. **Add upload receipt button in header** — small upload icon (`cloud-upload-outline`) top right, `router.push('/(tenant)/payments')` (user selects from list which payment to upload for — actual upload lives on payment detail screen)
+
+---
+
+### Step D — Tenant Maintenance List `(tenant)/maintenance/index.tsx`
+
+1. **Wire "New Request" button** — already exists in header, add `onPress={() => router.push('/(tenant)/maintenance/new')}`
+2. **Make rows tappable** — rows already have `TouchableOpacity`, add `onPress={() => router.push('/(tenant)/maintenance/${r.id}')}`
+
+---
+
+### Step E — Tenant Utilities List `(tenant)/utilities/index.tsx`
+
+1. **Make rows tappable** — wrap each bill row in `TouchableOpacity`, `onPress={() => router.push('/(tenant)/utilities/${b.id}')}`
+2. **Add upload button in header** — `cloud-upload-outline` icon top right, navigates to `/(tenant)/utilities` (tenant selects which bill — actual upload on bill detail screen)
+
+---
+
+### Step F — Landlord Payments List `(landlord)/payments/index.tsx`
+
+1. **Add + button in header** — same style as Properties list (green circle + icon), `onPress={() => router.push('/(landlord)/payments/record')}`
+2. **Fix error state** — replace `<Text style={{ color: '#DC2626' }}>Failed to load payments</Text>` with: icon (`alert-circle-outline`, color `#9CA3AF`) + "Couldn't load payments right now" + "Pull down to try again" in gray text
+
+---
+
+### Step G — Landlord Properties List `(landlord)/properties/index.tsx`
+
+1. **Fix error state** — replace current error view with: icon (`alert-circle-outline`) + "Couldn't load your properties right now" + "Pull down to try again"
+
+---
+
+### Step H — Landlord More `(landlord)/more.tsx`
+
+1. **Notifications row** — remove `onPress` and the chevron icon, make it non-tappable visually (gray out or remove the right arrow). Do not delete the row.
+2. **About RentCo row** — same treatment.
+
+---
+
+### Step I — Landlord Maintenance List `(landlord)/maintenance/index.tsx`
+
+1. **Accept `unitId` query param** — read `useLocalSearchParams()` for optional `unitId`, if present filter the fetched requests to only that unit. This enables Unit Detail's Maintenance button to link here with context.
+
+---
+
+### Step J — Landlord Dashboard `(landlord)/index.tsx`
+
+1. **Avatar** — add `onPress={() => router.push('/(landlord)/more')}` to the Avatar `TouchableOpacity`
+2. **Alert rows** — wire each alert row's `onPress`:
+   - Overdue payments → `router.push('/(landlord)/payments')` (future: pass filter param)
+   - Expiring leases → `router.push('/(landlord)/tenants')`
+   - Pending confirmations → `router.push('/(landlord)/payments')`
+
+---
+
 ## Known Deferred Items (Post-MVP)
 
 Per `CLAUDE.md` — do not build these until explicitly instructed:
