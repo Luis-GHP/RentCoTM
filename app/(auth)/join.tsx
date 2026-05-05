@@ -16,19 +16,19 @@ export default function JoinScreen() {
   const [tenantId, setTenantId] = useState<string | null>(null);
 
   useEffect(() => {
+    async function validateToken() {
+      const { data, error } = await supabase.rpc('validate_invite_token', { p_token: token });
+      setValidating(false);
+      if (error || !data?.[0]?.is_valid) {
+        setError(data?.[0]?.reason ?? 'This invite link is invalid or has expired.');
+        return;
+      }
+      setTenantId(data[0].tenant_id);
+    }
+
     if (!token) { setError('Invalid invite link.'); setValidating(false); return; }
     validateToken();
   }, [token]);
-
-  async function validateToken() {
-    const { data, error } = await supabase.rpc('validate_invite_token', { p_token: token });
-    setValidating(false);
-    if (error || !data?.[0]?.is_valid) {
-      setError(data?.[0]?.reason ?? 'This invite link is invalid or has expired.');
-      return;
-    }
-    setTenantId(data[0].tenant_id);
-  }
 
   async function handleSetup() {
     setError('');

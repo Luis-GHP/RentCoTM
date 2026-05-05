@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from '../../../components/shared/Avatar';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
+import { EmptyState } from '../../../components/shared/EmptyState';
 import { useAllPayments, PaymentRow } from '../../../lib/query/payments';
 import { formatPHP, getMonthName } from '../../../lib/format';
 
@@ -130,12 +131,13 @@ export default function PaymentsScreen() {
           <Text style={{ fontSize: 14, color: '#9CA3AF', marginTop: 4, textAlign: 'center' }}>Pull down to try again</Text>
         </View>
       ) : groups.length === 0 ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-          <Text style={{ fontSize: 16, fontWeight: '600', color: '#374151' }}>No payments found</Text>
-          <Text style={{ fontSize: 14, color: '#9CA3AF', marginTop: 4 }}>
-            {filter !== 'all' ? 'Try a different filter' : 'Payments will appear here once recorded'}
-          </Text>
-        </View>
+        <EmptyState
+          icon="receipt-outline"
+          title={filter === 'all' ? 'No Payments Yet' : `No ${FILTERS.find(f => f.key === filter)?.label ?? 'Matching'} Payments Yet`}
+          subtitle={filter === 'all' ? 'Record a payment once rent starts coming in.' : 'Try another filter or record a new payment.'}
+          actionLabel="Record Payment"
+          onAction={() => router.push('/(landlord)/payments/record')}
+        />
       ) : (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
           {groups.map(g => (

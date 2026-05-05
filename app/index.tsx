@@ -13,7 +13,7 @@ export default function Index() {
       const t = setTimeout(refreshProfile, 800);
       return () => clearTimeout(t);
     }
-  }, [isLoading, session, profile]);
+  }, [isLoading, session, profile, refreshProfile]);
 
   if (isLoading || (session && !profile)) {
     return (

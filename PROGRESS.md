@@ -91,6 +91,7 @@
 - `utility-bills` — tenant-uploaded utility bill PDFs
 - `receipts` — tenant payment receipt screenshots
 - `or-pdfs` — generated Official Receipt PDFs
+- Migration `006_storage_buckets_and_policies.sql` creates these buckets and upload/read policies. Run it in Supabase SQL Editor or via linked CLI before testing file uploads.
 
 ### Environment
 - `.env` — `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` set
@@ -229,6 +230,10 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 | Expiring leases alert included already-expired leases | `lib/query/dashboard.ts` | Added `.gte('end_date', today)` lower bound to the leases query |
 | `cleaning` and `internet` missing from `MaintenanceRequest.category` type | `lib/types.ts` | Added both to the union type |
 | `useRecentTenantPayments` used `.in()` with single value | `lib/query/tenant-home.ts` | Changed to `.eq('status', 'paid')` |
+| Property detail could render a blank screen after create/open failure | `(landlord)/properties/[id]/index.tsx` | Added explicit error/not-found empty state with Back to Properties action |
+| Add Unit flow was documented but not implemented | `(landlord)/properties/[id]/index.tsx`, `lib/query/properties.ts` | Added Add Unit modal, `useCreateUnit()` mutation, and navigate-to-new-unit behavior |
+| Payments and maintenance empty states felt too terse | `(landlord)/payments/index.tsx`, `(landlord)/maintenance/index.tsx` | Updated to the locked "No X Yet" empty-state pattern with helpful hints and payment CTA |
+| Utility bill PDF upload failed with Storage RLS error | `supabase/migrations/006_storage_buckets_and_policies.sql`, `lib/query/utilities.ts` | Added storage bucket/policy migration and clearer upload error handling |
 | Template literals in PROGRESS.md Steps B–E used single quotes | `PROGRESS.md` | Fixed to backtick syntax so they work when copy-pasted |
 
 ---
@@ -275,6 +280,16 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 | Maintenance context missing | Show open request count badge on unit card (red dot with number) | MVP |
 | Documents | Stub "View documents" row in info card, no screen yet | Stub now |
 | Delete/Archive property | 3-dot menu in header — do NOT build yet. Needs soft-delete + cascade consideration | Post-MVP |
+
+**Completed from this section:** Add Unit button/modal, no-units CTA, new unit mutation, navigate-to-new-unit behavior, and property type subtitle are now built.
+
+**Ticked off in this pass:**
+- [Built] No Add Unit button
+- [Built] Property type shown in Property Detail header
+- [Built] Blank Property Detail fallback state
+- [Built] Payments empty state copy and CTA
+- [Built] Maintenance empty state copy
+- [Built] Utility bill Storage RLS migration and upload error handling
 
 **Unit type display logic:**
 - All types (Studio/1BR/2BR/3BR/Room/Whole Unit) follow identical app logic — type is a label only

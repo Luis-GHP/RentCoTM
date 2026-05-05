@@ -63,7 +63,7 @@ export default function MaintenanceScreen() {
         <EmptyState
           icon="construct-outline"
           title="No Requests Yet"
-          subtitle={unitId ? 'This unit has no matching maintenance requests.' : filter === 'all' ? 'Maintenance requests will appear here.' : `No ${filter.replace('_', ' ')} requests.`}
+          subtitle={unitId ? 'This unit has no maintenance requests in this view.' : filter === 'all' ? 'Maintenance requests will appear here when a tenant reports an issue.' : 'Try another status filter to see more requests.'}
         />
       ) : (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false}>

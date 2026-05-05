@@ -1,11 +1,15 @@
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { LoadingSpinner } from '../../../../components/shared/LoadingSpinner';
 import { Card } from '../../../../components/shared/Card';
 import { ListRow } from '../../../../components/shared/ListRow';
-import { useProperty, UnitSummary } from '../../../../lib/query/properties';
+import { AlertBox } from '../../../../components/shared/AlertBox';
+import { Button } from '../../../../components/shared/Button';
+import { EmptyState } from '../../../../components/shared/EmptyState';
+import { useCreateUnit, useProperty, UnitSummary, UnitType } from '../../../../lib/query/properties';
 import { formatPHP } from '../../../../lib/format';
 
 const PRIMARY = '#1B3C34';
@@ -27,6 +31,24 @@ const UNIT_TYPE: Record<string, string> = {
   room:       'Room',
   bedspace:   'Bedspace',
   whole_unit: 'Whole Unit',
+};
+
+const UNIT_TYPE_OPTIONS: { key: UnitType; label: string; placeholder: string }[] = [
+  { key: 'studio', label: 'Studio', placeholder: 'e.g. 101' },
+  { key: '1br', label: '1 BR', placeholder: 'e.g. 201' },
+  { key: '2br', label: '2 BR', placeholder: 'e.g. 301' },
+  { key: '3br', label: '3 BR', placeholder: 'e.g. 401' },
+  { key: 'room', label: 'Room', placeholder: 'e.g. Room A' },
+  { key: 'bedspace', label: 'Bedspace', placeholder: 'e.g. Bedspace 1' },
+  { key: 'whole_unit', label: 'Whole Unit', placeholder: 'e.g. Main House' },
+];
+
+const PROPERTY_TYPE: Record<string, string> = {
+  apartment: 'Apartment',
+  house: 'House',
+  condo: 'Condo',
+  boarding_house: 'Boarding House',
+  commercial: 'Commercial',
 };
 
 const UNIT_STATUS_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
@@ -85,13 +107,163 @@ function UnitCard({ unit, propertyId }: { unit: UnitSummary; propertyId: string 
   );
 }
 
+function AddUnitModal({
+  visible,
+  propertyId,
+  onClose,
+  onCreated,
+}: {
+  visible: boolean;
+  propertyId: string;
+  onClose: () => void;
+  onCreated: (unitId: string) => void;
+}) {
+  const createUnit = useCreateUnit();
+  const [unitNumber, setUnitNumber] = useState('');
+  const [unitType, setUnitType] = useState<UnitType>('studio');
+  const [floor, setFloor] = useState('');
+  const [monthlyRent, setMonthlyRent] = useState('');
+  const [error, setError] = useState('');
+
+  const selectedType = UNIT_TYPE_OPTIONS.find(option => option.key === unitType) ?? UNIT_TYPE_OPTIONS[0];
+
+  function resetAndClose() {
+    setUnitNumber('');
+    setUnitType('studio');
+    setFloor('');
+    setMonthlyRent('');
+    setError('');
+    onClose();
+  }
+
+  async function save() {
+    setError('');
+    if (!unitNumber.trim()) { setError('Unit number is required.'); return; }
+    const rent = Number(monthlyRent);
+    if (!Number.isFinite(rent) || rent <= 0) { setError('Monthly rent must be greater than zero.'); return; }
+
+    try {
+      const unitId = await createUnit.mutateAsync({
+        propertyId,
+        unitNumber,
+        type: unitType,
+        floor: floor || null,
+        monthlyRent: rent,
+      });
+      resetAndClose();
+      onCreated(unitId);
+    } catch (err) {
+      const message = err instanceof Error && err.message.includes('duplicate')
+        ? 'A unit with this number already exists for this property.'
+        : 'Could not add this unit right now.';
+      setError(message);
+    }
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={resetAndClose}>
+      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(17,24,39,0.35)' }}>
+        <View style={{ backgroundColor: '#F9FAFB', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '88%', paddingBottom: 24 }}>
+          <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, borderBottomWidth: 1, borderBottomColor: '#F3F4F6', paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: '#111827' }}>Add Unit</Text>
+            <TouchableOpacity onPress={resetAndClose} activeOpacity={0.7} style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6' }}>
+              <Ionicons name="close" size={20} color="#374151" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            {error ? <AlertBox type="error" message={error} /> : null}
+
+            <Field
+              label="Unit Number"
+              value={unitNumber}
+              onChange={setUnitNumber}
+              placeholder={selectedType.placeholder}
+            />
+
+            <Text style={{ fontSize: 13, fontWeight: '700', color: '#374151', marginBottom: 8 }}>Unit Type</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+              {UNIT_TYPE_OPTIONS.map(option => {
+                const selected = unitType === option.key;
+                return (
+                  <TouchableOpacity
+                    key={option.key}
+                    onPress={() => setUnitType(option.key)}
+                    activeOpacity={0.75}
+                    style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, backgroundColor: selected ? PRIMARY : '#fff', borderWidth: 1, borderColor: selected ? PRIMARY : '#E5E7EB' }}
+                  >
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: selected ? '#fff' : '#374151' }}>{option.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <Field label="Floor" value={floor} onChange={setFloor} placeholder="Optional" />
+            <Field label="Monthly Rent" value={monthlyRent} onChange={setMonthlyRent} placeholder="0.00" keyboardType="decimal-pad" />
+
+            <Button label="Save Unit" loading={createUnit.isPending} onPress={save} />
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  keyboardType,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  keyboardType?: 'default' | 'decimal-pad';
+}) {
+  return (
+    <View style={{ marginBottom: 16 }}>
+      <Text style={{ fontSize: 13, fontWeight: '700', color: '#374151', marginBottom: 6 }}>{label}</Text>
+      <TextInput
+        value={value}
+        onChangeText={onChange}
+        placeholder={placeholder}
+        placeholderTextColor="#9CA3AF"
+        keyboardType={keyboardType}
+        style={{ backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', height: 52, paddingHorizontal: 16, color: '#111827', fontSize: 15 }}
+      />
+    </View>
+  );
+}
+
 export default function PropertyDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { data: property, isLoading } = useProperty(id);
+  const { data: property, isLoading, error } = useProperty(id);
+  const [isAddUnitOpen, setIsAddUnitOpen] = useState(false);
 
   if (isLoading) return <LoadingSpinner fullScreen />;
-  if (!property) return null;
+
+  if (error || !property) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
+        <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6', paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={{ marginRight: 12 }}>
+            <Ionicons name="chevron-back" size={24} color="#111827" />
+          </TouchableOpacity>
+          <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: '#111827' }}>Property</Text>
+        </View>
+        <EmptyState
+          icon="alert-circle-outline"
+          title="Couldn't Load Property"
+          subtitle="Go back and try opening the property again."
+          actionLabel="Back to Properties"
+          onAction={() => router.replace('/(landlord)/properties')}
+        />
+      </SafeAreaView>
+    );
+  }
 
   const units = property.unit ?? [];
   const total = units.length;
@@ -106,7 +278,13 @@ export default function PropertyDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={{ marginRight: 12 }}>
           <Ionicons name="chevron-back" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: '#111827' }} numberOfLines={1}>{property.name}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827' }} numberOfLines={1}>{property.name}</Text>
+          <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 1 }}>{PROPERTY_TYPE[property.type] ?? property.type}</Text>
+        </View>
+        <TouchableOpacity onPress={() => setIsAddUnitOpen(true)} activeOpacity={0.8} style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center', marginLeft: 12 }}>
+          <Ionicons name="add" size={22} color="#fff" />
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false}>
@@ -143,9 +321,14 @@ export default function PropertyDetailScreen() {
         {/* Units list */}
         <Text style={{ fontSize: 15, fontWeight: '700', color: '#111827', marginBottom: 10 }}>Units</Text>
         {units.length === 0 ? (
-          <View style={{ backgroundColor: '#fff', borderRadius: 14, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: '#F3F4F6' }}>
-            <Ionicons name="home-outline" size={40} color="#D1D5DB" />
-            <Text style={{ fontSize: 14, color: '#9CA3AF', marginTop: 10 }}>No units yet</Text>
+          <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F3F4F6', minHeight: 260 }}>
+            <EmptyState
+              icon="home-outline"
+              title="No Units Yet"
+              subtitle="Add your first unit so you can invite tenants, track rent, and log maintenance."
+              actionLabel="Add Unit"
+              onAction={() => setIsAddUnitOpen(true)}
+            />
           </View>
         ) : (
           <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F3F4F6', overflow: 'hidden' }}>
@@ -157,6 +340,13 @@ export default function PropertyDetailScreen() {
           </View>
         )}
       </ScrollView>
+
+      <AddUnitModal
+        visible={isAddUnitOpen}
+        propertyId={property.id}
+        onClose={() => setIsAddUnitOpen(false)}
+        onCreated={unitId => router.push(`/(landlord)/properties/${property.id}/units/${unitId}`)}
+      />
     </SafeAreaView>
   );
 }

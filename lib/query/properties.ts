@@ -3,6 +3,7 @@ import { supabase } from '../supabase';
 
 export type PropertyType = 'apartment' | 'house' | 'condo' | 'boarding_house' | 'commercial';
 export type ElectricProvider = 'meralco' | 'veco' | 'dlpc' | 'beneco' | 'neeco' | 'manual';
+export type UnitType = 'studio' | '1br' | '2br' | '3br' | 'room' | 'bedspace' | 'whole_unit';
 
 export type PropertyWithUnits = {
   id: string;
@@ -90,6 +91,7 @@ export type PropertyDetail = {
   id: string;
   name: string;
   address: string;
+  type: PropertyType;
   electric_provider: string | null;
   default_rate_per_kwh: number | null;
   unit: UnitSummary[];
@@ -103,7 +105,7 @@ export function useProperty(id?: string) {
       const { data, error } = await supabase
         .from('property')
         .select(`
-          id, name, address, electric_provider, default_rate_per_kwh,
+          id, name, address, type, electric_provider, default_rate_per_kwh,
           unit (
             id, unit_number, type, floor, monthly_rent, status,
             lease (
@@ -116,6 +118,39 @@ export function useProperty(id?: string) {
         .single();
       if (error) throw error;
       return data as PropertyDetail;
+    },
+  });
+}
+
+export function useCreateUnit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: {
+      propertyId: string;
+      unitNumber: string;
+      type: UnitType;
+      floor: string | null;
+      monthlyRent: number;
+    }) => {
+      const { data, error } = await supabase
+        .from('unit')
+        .insert({
+          property_id: params.propertyId,
+          unit_number: params.unitNumber.trim(),
+          type: params.type,
+          floor: params.floor?.trim() || null,
+          monthly_rent: params.monthlyRent,
+          status: 'vacant',
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      return data.id as string;
+    },
+    onSuccess: (unitId, params) => {
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      queryClient.invalidateQueries({ queryKey: ['property', params.propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['unit', unitId] });
     },
   });
 }

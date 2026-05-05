@@ -73,18 +73,25 @@ export default function UploadUtilityBillScreen() {
     if (!picked) return;
     setError('');
     setBanner('');
-    const result = await parseBill.mutateAsync({ uri: picked.uri, fileName: picked.name });
-    setBillPdfUrl(result.billPdfUrl);
-    if (result.parsed) {
-      setFields({ ...emptyFields(), ...result.parsed });
-      setManual(false);
+    try {
+      const result = await parseBill.mutateAsync({ uri: picked.uri, fileName: picked.name });
+      setBillPdfUrl(result.billPdfUrl);
+      if (result.parsed) {
+        setFields({ ...emptyFields(), ...result.parsed });
+        setManual(false);
+        setMode('review');
+        return;
+      }
+      setManual(true);
+      setFields(emptyFields());
       setMode('review');
-      return;
+      setBanner(result.message ?? 'Could not parse this document. Please enter details manually.');
+    } catch (err) {
+      const message = err instanceof Error && err.message.toLowerCase().includes('row-level security')
+        ? 'Storage is not ready for utility bill uploads. Apply the latest Supabase storage migration, then try again.'
+        : 'Could not upload this PDF. Please try again or enter the bill manually.';
+      setError(message);
     }
-    setManual(true);
-    setFields(emptyFields());
-    setMode('review');
-    setBanner(result.message ?? 'Could not parse this document. Please enter details manually.');
   }
 
   function setField<K extends keyof ParsedUtilityBill>(key: K, value: ParsedUtilityBill[K]) {

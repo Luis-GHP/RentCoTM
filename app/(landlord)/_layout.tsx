@@ -14,7 +14,7 @@ export default function LandlordLayout() {
     } else if (!profile.is_active) {
       router.replace('/(auth)/deactivated');
     }
-  }, [profile, isLoading]);
+  }, [profile, isLoading, router]);
 
   if (isLoading || !profile) return null;
 

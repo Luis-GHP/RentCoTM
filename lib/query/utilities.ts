@@ -59,9 +59,13 @@ function normalizeBill(row: any): UtilityBillRow {
 }
 
 async function uploadPdf(uri: string, fileName: string) {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (!user) throw new Error('You must be signed in to upload utility bills.');
+
   const response = await fetch(uri);
   const blob = await response.blob();
-  const path = `landlord/${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, '-')}`;
+  const path = `landlord/${user.id}/${Date.now()}-${fileName.replace(/[^a-zA-Z0-9.-]/g, '-')}`;
   const { error } = await supabase.storage.from('utility-bills').upload(path, blob, {
     contentType: blob.type || 'application/pdf',
     upsert: false,
