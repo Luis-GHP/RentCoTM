@@ -104,7 +104,7 @@ All screens from the Screen Inventory in `CLAUDE.md` were created as functional 
 
 ---
 
-## 5. Detail Screens + Action Flows (IN PROGRESS)
+## 5. Detail Screens + Action Flows ✅
 
 ### Step 5a — Structural move + navigation wiring ✅
 
