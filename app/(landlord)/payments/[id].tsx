@@ -53,7 +53,7 @@ export default function PaymentDetailScreen() {
           onPress: async () => {
             setBusy(true);
             try {
-              await confirmPayment.mutateAsync(payment.id);
+              await confirmPayment.mutateAsync({ paymentId: payment.id, currentPaymentDate: payment.payment_date });
             } catch {
               Alert.alert('Error', 'Could not confirm payment. Please try again.');
             } finally {

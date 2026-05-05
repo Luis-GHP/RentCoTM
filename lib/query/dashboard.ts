@@ -37,9 +37,16 @@ export function useMonthlySummary(month?: number, year?: number) {
 
       return (data ?? []).reduce(
         (acc, p) => {
-          if (p.status === 'paid') acc.collected += Number(p.amount_paid);
-          if (p.status === 'pending') acc.pending += Number(p.amount_due);
-          if (p.status === 'overdue') acc.overdue += Number(p.amount_due);
+          if (p.status === 'paid') {
+            acc.collected += Number(p.amount_paid);
+          } else if (p.status === 'partial') {
+            acc.collected += Number(p.amount_paid);
+            acc.pending += Number(p.amount_due) - Number(p.amount_paid);
+          } else if (p.status === 'pending') {
+            acc.pending += Number(p.amount_due);
+          } else if (p.status === 'overdue') {
+            acc.overdue += Number(p.amount_due);
+          }
           return acc;
         },
         { collected: 0, pending: 0, overdue: 0 }
@@ -72,11 +79,15 @@ export function useAlerts() {
   return useQuery({
     queryKey: ['alerts'],
     queryFn: async () => {
+      const today = new Date().toISOString().split('T')[0];
       const in30Days = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
 
       const [overdue, expiring, pending] = await Promise.all([
         supabase.from('rent_payment').select('id', { count: 'exact', head: true }).eq('status', 'overdue'),
-        supabase.from('lease').select('id', { count: 'exact', head: true }).eq('status', 'active').lte('end_date', in30Days),
+        supabase.from('lease').select('id', { count: 'exact', head: true })
+          .eq('status', 'active')
+          .gte('end_date', today)
+          .lte('end_date', in30Days),
         supabase.from('rent_payment').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
       ]);
 

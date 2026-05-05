@@ -81,8 +81,13 @@ export function useUpdateMaintenanceStatus() {
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: MaintenanceStatus }) => {
       const updates: Record<string, unknown> = { status };
-      if (status === 'resolved') updates.resolved_at = new Date().toISOString();
-      if (status !== 'resolved') updates.resolved_at = null;
+      if (status === 'resolved') {
+        updates.resolved_at = new Date().toISOString();
+      } else if (status === 'open' || status === 'assigned' || status === 'in_progress') {
+        // Clear resolved_at only when reverting to a pre-resolution state
+        updates.resolved_at = null;
+      }
+      // 'closed' preserves resolved_at — it means resolved AND confirmed by tenant
 
       const { error } = await supabase
         .from('maintenance_request')

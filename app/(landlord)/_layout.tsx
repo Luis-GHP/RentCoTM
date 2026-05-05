@@ -9,8 +9,10 @@ export default function LandlordLayout() {
 
   useEffect(() => {
     if (isLoading) return;
-    if (!profile || profile.role !== 'landlord' || !profile.is_active) {
+    if (!profile || profile.role !== 'landlord') {
       router.replace('/(auth)/login');
+    } else if (!profile.is_active) {
+      router.replace('/(auth)/deactivated');
     }
   }, [profile, isLoading]);
 

@@ -136,18 +136,12 @@ All screens from the Screen Inventory in `CLAUDE.md` were created as functional 
 - `app/(landlord)/payments/[id].tsx` — amount hero (green if paid, amber if pending), OR number display, tenant avatar + unit, payment details (method, reference, date, confirmed date), Confirm Payment & Issue OR button, Mark as Unpaid button with Alert confirmations
 - `app/(landlord)/payments/record.tsx` — active lease picker (scrollable list, checkmark on selection), month chip selector (horizontal scroll), year chip selector, amount input pre-filled from monthly rent, method chips (GCash/Maya/Bank/Cash), conditional reference number field for non-cash methods, today's date display
 
-### Step 5d — Maintenance detail 🔲 ← NEXT
+### Step 5d — Maintenance detail ✅
 
-**Needs building:**
-- `useMaintenanceRequest(id)` hook in `lib/query/maintenance.ts` — fetch single request with unit, property, description, all fields
-- `useUpdateMaintenanceStatus()` mutation — update status in `maintenance_request`
-- `app/(landlord)/maintenance/[id].tsx`:
-  - Back button + title (request title)
-  - Category icon + priority dot + status badge
-  - Unit + property info
-  - Description card
-  - Status update section — landlord can change status between open/assigned/in_progress/resolved/closed
-  - Created date + resolved date (if resolved)
+**Built:**
+- `useMaintenanceRequest(id)` hook in `lib/query/maintenance.ts`
+- `useUpdateMaintenanceStatus()` mutation in `lib/query/maintenance.ts`
+- `app/(landlord)/maintenance/[id].tsx` — full detail screen with category icon, priority, location card, description, timeline, and status stepper
 
 ---
 
@@ -227,6 +221,15 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 | Priority key `urgent` doesn't match DB enum | `(tenant)/index.tsx` | Changed to `emergency` |
 | StatusBadge missing maintenance statuses | `StatusBadge.tsx` | Added open/assigned/in_progress/resolved/closed |
 | `expo-secure-store` crash on startup | `lib/supabase.ts` | Replaced with `AsyncStorage` |
+| OR not voided if update fails in `useRecordPayment` | `lib/query/payments.ts` | Added `void_or_number` RPC call on updateErr after OR claim |
+| `useConfirmPayment` overwrote `payment_date` unconditionally | `lib/query/payments.ts` | Now only sets `payment_date` if it was null; accepts `currentPaymentDate` param; call site updated |
+| Moving maintenance to `closed` cleared `resolved_at` | `lib/query/maintenance.ts` | Now only clears `resolved_at` when reverting to open/assigned/in_progress; closed preserves it |
+| Deactivated users redirected to login instead of deactivated screen | `(landlord)/_layout.tsx`, `(tenant)/_layout.tsx` | Separated `!is_active` check → `router.replace('/(auth)/deactivated')` |
+| `partial` payments invisible in dashboard summary | `lib/query/dashboard.ts` | Added partial bucket: collected += amount_paid, pending += remaining balance |
+| Expiring leases alert included already-expired leases | `lib/query/dashboard.ts` | Added `.gte('end_date', today)` lower bound to the leases query |
+| `cleaning` and `internet` missing from `MaintenanceRequest.category` type | `lib/types.ts` | Added both to the union type |
+| `useRecentTenantPayments` used `.in()` with single value | `lib/query/tenant-home.ts` | Changed to `.eq('status', 'paid')` |
+| Template literals in PROGRESS.md Steps B–E used single quotes | `PROGRESS.md` | Fixed to backtick syntax so they work when copy-pasted |
 
 ---
 
@@ -850,15 +853,15 @@ All changes are in `app/(tenant)/index.tsx`. Add `useRouter` if not already impo
 | "View all" on Recent Payments | `router.push('/(tenant)/payments')` |
 | "View all" on Utility Bills | `router.push('/(tenant)/utilities')` |
 | "New Request" maintenance button | `router.push('/(tenant)/maintenance/new')` |
-| Individual payment row `onPress` | `router.push('/(tenant)/payments/${p.id}')` |
-| Individual utility bill row | Wrap in `TouchableOpacity`, `router.push('/(tenant)/utilities/${b.id}')` |
-| Individual maintenance row | Already has `TouchableOpacity`, add `router.push('/(tenant)/maintenance/${r.id}')` |
+| Individual payment row `onPress` | `` router.push(`/(tenant)/payments/${p.id}`) `` |
+| Individual utility bill row | Wrap in `TouchableOpacity`, `` router.push(`/(tenant)/utilities/${b.id}`) `` |
+| Individual maintenance row | Already has `TouchableOpacity`, add `` router.push(`/(tenant)/maintenance/${r.id}`) `` |
 
 ---
 
 ### Step C — Tenant Payments List `(tenant)/payments/index.tsx`
 
-1. **Make rows tappable** — wrap each payment row in `TouchableOpacity`, `onPress={() => router.push('/(tenant)/payments/${p.id}')}`
+1. **Make rows tappable** — wrap each payment row in `TouchableOpacity`, `` onPress={() => router.push(`/(tenant)/payments/${p.id}`)} ``
 2. **Add filter tabs** — same pattern as landlord payments list: All / Pending / Confirmed / Overdue. Filter `payments` array client-side by `status`
 3. **Add upload receipt button in header** — small upload icon (`cloud-upload-outline`) top right, `router.push('/(tenant)/payments')` (user selects from list which payment to upload for — actual upload lives on payment detail screen)
 
@@ -867,13 +870,13 @@ All changes are in `app/(tenant)/index.tsx`. Add `useRouter` if not already impo
 ### Step D — Tenant Maintenance List `(tenant)/maintenance/index.tsx`
 
 1. **Wire "New Request" button** — already exists in header, add `onPress={() => router.push('/(tenant)/maintenance/new')}`
-2. **Make rows tappable** — rows already have `TouchableOpacity`, add `onPress={() => router.push('/(tenant)/maintenance/${r.id}')}`
+2. **Make rows tappable** — rows already have `TouchableOpacity`, add `` onPress={() => router.push(`/(tenant)/maintenance/${r.id}`)} ``
 
 ---
 
 ### Step E — Tenant Utilities List `(tenant)/utilities/index.tsx`
 
-1. **Make rows tappable** — wrap each bill row in `TouchableOpacity`, `onPress={() => router.push('/(tenant)/utilities/${b.id}')}`
+1. **Make rows tappable** — wrap each bill row in `TouchableOpacity`, `` onPress={() => router.push(`/(tenant)/utilities/${b.id}`)} ``
 2. **Add upload button in header** — `cloud-upload-outline` icon top right, navigates to `/(tenant)/utilities` (tenant selects which bill — actual upload on bill detail screen)
 
 ---
