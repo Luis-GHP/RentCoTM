@@ -1,4 +1,4 @@
-# RentCoTM — Build Progress
+# RentCo — Build Progress
 
 > Last updated: 2026-05-05
 > Active branch: `claude/create-brand-guidelines-4u8zD`
