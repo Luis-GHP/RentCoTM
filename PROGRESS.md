@@ -404,6 +404,34 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 
 ---
 
+### Invite Tenant `/(landlord)/tenants/invite`
+
+**Header:** Back arrow + "Invite Tenant"
+
+**Form (before generating):**
+- Tenant name — text input, required
+- Phone number — numeric input, PH format (+63 / 09XX), required
+- Unit assignment — picker showing vacant units only (unit number + property name). Required — invite must be tied to a unit
+
+**On Generate:**
+- Insert into `tenant_invite` table: token, tenant name, phone, unit ID, 7-day expiry
+- Form disappears, link UI takes over
+- Shows generated link in a copyable text box: `https://[domain]/join?token=[token]`
+- Expiry label: "This link expires in 7 days"
+- Native Share button — system share sheet only, no hardcoded apps
+- Copy to clipboard button alongside the link
+- "Generate New Link" button to reset and start over
+
+| Decision | Recommendation |
+|---|---|
+| Unit assignment required? | Yes — invite must be tied to a specific unit |
+| No vacant units available | Show "No vacant units available" instead of picker + link to Add Unit |
+| Invite without unit? | Not allowed |
+| Expiry display | Show clearly: "Expires January 22, 2026" |
+| Existing active invite for same unit | Warn: "An invite for this unit is already active. Generating a new one will invalidate the old link." — require confirmation before proceeding |
+
+---
+
 ### Maintenance List `/(landlord)/maintenance`
 
 | Gap | Recommendation | Priority |
