@@ -24,6 +24,7 @@ export default function TenantUtilities() {
   const { data: bills, isLoading: billsLoading } = useAllTenantBills(unitId);
 
   const isLoading = leaseLoading || billsLoading;
+  const uploadTarget = (bills ?? [])[0];
 
   if (isLoading) return <LoadingSpinner fullScreen />;
 
@@ -32,8 +33,12 @@ export default function TenantUtilities() {
       {/* Header */}
       <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6', paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', alignItems: 'center' }}>
         <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: '#111827' }}>Utility Bills</Text>
-        <TouchableOpacity onPress={() => router.push('/(tenant)/utilities')} activeOpacity={0.7}>
-          <Ionicons name="cloud-upload-outline" size={24} color="#1B3C34" />
+        <TouchableOpacity
+          onPress={() => uploadTarget && router.push(`/(tenant)/utilities/${uploadTarget.id}`)}
+          activeOpacity={0.7}
+          disabled={!uploadTarget}
+        >
+          <Ionicons name="cloud-upload-outline" size={24} color={uploadTarget ? '#1B3C34' : '#D1D5DB'} />
         </TouchableOpacity>
       </View>
 

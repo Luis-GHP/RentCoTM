@@ -12,6 +12,7 @@ const CONFIG: Record<string, { bg: string; text: string; label: string }> = {
   waived:      { bg: '#F9FAFB', text: '#6B7280', label: 'Waived' },
   expired:     { bg: '#F9FAFB', text: '#6B7280', label: 'Expired' },
   terminated:  { bg: '#F9FAFB', text: '#6B7280', label: 'Terminated' },
+  advance:     { bg: '#EFF6FF', text: '#2563EB', label: 'Advance' },
   // Maintenance statuses
   open:        { bg: '#EFF6FF', text: '#1D4ED8', label: 'Open' },
   assigned:    { bg: '#F5F3FF', text: '#6D28D9', label: 'Assigned' },

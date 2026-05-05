@@ -29,6 +29,7 @@ export default function TenantPayments() {
 
   const isLoading = leaseLoading || paymentsLoading;
   const filteredPayments = (payments ?? []).filter(p => filter === 'all' || p.status === filter);
+  const uploadTarget = (payments ?? []).find(p => ['pending', 'unpaid', 'overdue'].includes(p.status));
 
   if (isLoading) return <LoadingSpinner fullScreen />;
 
@@ -38,8 +39,12 @@ export default function TenantPayments() {
       <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 4 }}>
           <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: '#111827' }}>Payments</Text>
-          <TouchableOpacity onPress={() => router.push('/(tenant)/payments')} activeOpacity={0.7}>
-            <Ionicons name="cloud-upload-outline" size={24} color="#1B3C34" />
+          <TouchableOpacity
+            onPress={() => uploadTarget && router.push(`/(tenant)/payments/${uploadTarget.id}`)}
+            activeOpacity={0.7}
+            disabled={!uploadTarget}
+          >
+            <Ionicons name="cloud-upload-outline" size={24} color={uploadTarget ? '#1B3C34' : '#D1D5DB'} />
           </TouchableOpacity>
         </View>
         <FilterTabs tabs={FILTERS} active={filter} onChange={setFilter} />
