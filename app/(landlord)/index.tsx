@@ -2,7 +2,6 @@ import { View, Text, Image, ScrollView, TouchableOpacity, ActivityIndicator } fr
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../../lib/auth';
 import { Avatar } from '../../components/shared/Avatar';
 import { useLandlordInfo, useMonthlySummary, usePortfolioOverview, useAlerts } from '../../lib/query/dashboard';
 import { formatPHP, getGreeting, getMonthName } from '../../lib/format';
@@ -74,14 +73,15 @@ function StatItem({ value, label, accent }: { value: number | string; label: str
 }
 
 function AlertsSection() {
+  const router = useRouter();
   const { data, isLoading } = useAlerts();
 
   if (isLoading) return null;
 
   const alerts = [
-    { count: data?.overduePayments ?? 0, label: 'Overdue Payments', color: '#DC2626', bg: '#FEF2F2', icon: 'warning-outline' as const },
-    { count: data?.expiringLeases ?? 0, label: 'Expiring Leases', color: '#B45309', bg: '#FFFBEB', icon: 'time-outline' as const },
-    { count: data?.pendingConfirmations ?? 0, label: 'Pending Confirmations', color: '#1D4ED8', bg: '#EFF6FF', icon: 'checkmark-circle-outline' as const },
+    { count: data?.overduePayments ?? 0, label: 'Overdue Payments', color: '#DC2626', bg: '#FEF2F2', icon: 'warning-outline' as const, route: '/(landlord)/payments' },
+    { count: data?.expiringLeases ?? 0, label: 'Expiring Leases', color: '#B45309', bg: '#FFFBEB', icon: 'time-outline' as const, route: '/(landlord)/tenants' },
+    { count: data?.pendingConfirmations ?? 0, label: 'Pending Confirmations', color: '#1D4ED8', bg: '#EFF6FF', icon: 'checkmark-circle-outline' as const, route: '/(landlord)/payments' },
   ].filter(a => a.count > 0);
 
   if (alerts.length === 0) return null;
@@ -90,13 +90,18 @@ function AlertsSection() {
     <View style={{ marginBottom: 16 }}>
       <Text style={{ fontSize: 15, fontWeight: '700', color: '#111827', marginBottom: 10 }}>Alerts</Text>
       {alerts.map(a => (
-        <View key={a.label} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: a.bg, borderRadius: 12, padding: 14, marginBottom: 8 }}>
+        <TouchableOpacity
+          key={a.label}
+          onPress={() => router.push(a.route as any)}
+          activeOpacity={0.75}
+          style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: a.bg, borderRadius: 12, padding: 14, marginBottom: 8 }}
+        >
           <Ionicons name={a.icon} size={20} color={a.color} />
           <Text style={{ flex: 1, marginLeft: 10, fontSize: 14, color: '#111827' }}>{a.label}</Text>
           <View style={{ backgroundColor: a.color, borderRadius: 12, minWidth: 24, height: 24, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 }}>
             <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>{a.count}</Text>
           </View>
-        </View>
+        </TouchableOpacity>
       ))}
     </View>
   );
@@ -109,7 +114,7 @@ function QuickActions() {
     { icon: 'business-outline' as const,    label: 'Add Property',      route: '/(landlord)/properties/add' },
     { icon: 'person-add-outline' as const,  label: 'Add Tenant',        route: '/(landlord)/tenants/invite' },
     { icon: 'cash-outline' as const,        label: 'Record Payment',    route: '/(landlord)/payments/record' },
-    { icon: 'document-text-outline' as const, label: 'Upload Utility Bill', route: '/(landlord)/utilities' },
+    { icon: 'document-text-outline' as const, label: 'Upload Utility Bill', route: '/(landlord)/utilities/upload' },
   ];
 
   return (
@@ -135,7 +140,7 @@ function QuickActions() {
 }
 
 export default function LandlordDashboard() {
-  const { profile } = useAuth();
+  const router = useRouter();
   const { data: landlord } = useLandlordInfo();
   const name = landlord?.name ?? 'there';
   const greeting = getGreeting();
@@ -145,10 +150,14 @@ export default function LandlordDashboard() {
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
         <Image source={require('../../assets/images/logo-horizontal.png')} style={{ height: 28, width: 120 }} resizeMode="contain" />
-        <TouchableOpacity style={{ marginRight: 12 }} activeOpacity={0.7}>
+        <TouchableOpacity onPress={() => router.push('/(landlord)/more')} style={{ marginRight: 12 }} activeOpacity={0.7}>
           <Ionicons name="notifications-outline" size={24} color="#374151" />
         </TouchableOpacity>
-        {landlord && <Avatar name={landlord.name} size={34} />}
+        {landlord && (
+          <TouchableOpacity onPress={() => router.push('/(landlord)/more')} activeOpacity={0.7}>
+            <Avatar name={landlord.name} size={34} />
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
