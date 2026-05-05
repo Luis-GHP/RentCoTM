@@ -685,6 +685,53 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 
 ---
 
+---
+
+## Planned Feature: House Rules & Policies
+
+> Discussed and agreed. Not yet scheduled for implementation. Document here until assigned a build step.
+
+### What it is
+Landlords can write house rules and policies per property (property-wide) or per unit (unit-specific overrides). Tenants can read the rules that apply to their unit. Not a high-priority action item — reference material only.
+
+### Database
+
+New table: `policy`
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | `uuid` PK | |
+| `landlord_id` | `uuid` FK → `landlord` | |
+| `property_id` | `uuid` FK → `property` | Always required |
+| `unit_id` | `uuid` FK → `unit`, nullable | null = property-wide rule |
+| `title` | `text` | e.g. "No Smoking", "Garbage Schedule" |
+| `body` | `text` | The full rule text |
+| `sort_order` | `int` | Controls display order |
+| `is_active` | `bool` default true | Soft-delete / unpublish |
+| `created_at` | `timestamptz` | |
+
+**Tenant query logic:** fetch policies where `property_id` = tenant's property AND `unit_id IS NULL` (property-wide), UNION fetch where `unit_id` = tenant's unit. Display property-wide first, then unit-specific.
+
+### Landlord Side
+
+| Screen | What to add |
+|---|---|
+| Property Detail `/(landlord)/properties/[id]` | "House Rules & Policies" section at the bottom, shows count badge + "Edit Rules" button → navigates to `/(landlord)/properties/[id]/policies` |
+| `/(landlord)/properties/[id]/policies` | New screen: list of policy cards with add/edit/delete/reorder. Each card shows title + body preview. Edit inline or via modal. |
+| Unit Detail `/(landlord)/properties/[id]/units/[unitId]` | "Unit-Specific Rules" section — same pattern, smaller. Only shows rules where `unit_id` matches. |
+
+### Tenant Side
+
+| Screen | What to add |
+|---|---|
+| Tenant More `/(tenant)/more` | "House Rules" card below Lease Summary. Lists applicable rules (property-wide + unit-specific). Read-only. Tapping a rule expands the full body. |
+| Tenant Home `/(tenant)/index` | Optional secondary link at the very bottom: "View House Rules →". Not a hero card — just a text link. |
+
+### Priority
+MVP — tenants frequently ask "what are the rules here?" and there's currently no in-app answer. Low effort to build, high value for reducing landlord-tenant friction.
+
+---
+
 ## Pending Fixes — Ready to Build
 
 > Everything in this section has a known, agreed fix. No further discussion needed before implementing. Execute in the order listed.
