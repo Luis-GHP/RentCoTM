@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../lib/auth';
@@ -35,27 +35,23 @@ export default function MoreScreen() {
 
         {/* Settings */}
         <Card padded={false} style={{ marginBottom: 16 }}>
-          <TouchableOpacity
-            activeOpacity={0.7}
+          <View
             style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}
           >
-            <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#E8F5F0', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-              <Ionicons name="notifications-outline" size={18} color="#1B3C34" />
+            <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+              <Ionicons name="notifications-outline" size={18} color="#9CA3AF" />
             </View>
-            <Text style={{ flex: 1, fontSize: 15, color: '#111827' }}>Notifications</Text>
-            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
-          </TouchableOpacity>
+            <Text style={{ flex: 1, fontSize: 15, color: '#6B7280' }}>Notifications</Text>
+          </View>
 
-          <TouchableOpacity
-            activeOpacity={0.7}
+          <View
             style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}
           >
-            <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#E8F5F0', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-              <Ionicons name="information-circle-outline" size={18} color="#1B3C34" />
+            <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+              <Ionicons name="information-circle-outline" size={18} color="#9CA3AF" />
             </View>
-            <Text style={{ flex: 1, fontSize: 15, color: '#111827' }}>About RentCo</Text>
-            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
-          </TouchableOpacity>
+            <Text style={{ flex: 1, fontSize: 15, color: '#6B7280' }}>About RentCo</Text>
+          </View>
         </Card>
 
         {/* Sign out */}
