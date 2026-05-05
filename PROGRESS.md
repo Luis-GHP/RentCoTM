@@ -230,6 +230,137 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 
 ---
 
+## UI/UX Gaps — Reviewed & Locked In
+
+> These were reviewed screen by screen. Each item has a recommendation. Build when the screen is being worked on — do not skip these during implementation.
+
+---
+
+### Global Patterns (apply to all screens)
+
+- **Error states** must never say "Failed to load X" in red text. Always: icon + "Couldn't load [X] right now" + "Pull down to try again"
+- **Empty states** should say "No [X] Yet" with a helpful one-line hint, not terse developer text
+- **+ buttons** on list screens must be in the header, consistent position (top right)
+- **Back arrows** on all detail and form screens — tab screens never have back arrows
+- **Dead buttons** (buttons that exist but go nowhere) must be wired before a screen is considered done
+
+---
+
+### Landlord Dashboard
+
+| Gap | Recommendation |
+|---|---|
+| Bell icon does nothing | Post-MVP — notifications list not built yet. Remove tappable feel or leave as-is |
+| Avatar does nothing | Tap navigates to More/Profile tab |
+| Alert rows do nothing | Overdue alert → Payments filtered to overdue. Expiring leases → Tenants. Pending confirmations → Payments filtered to pending |
+
+---
+
+### Property Detail `/(landlord)/properties/[id]`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| No Add Unit button | + button in header AND a CTA button in the "No units yet" empty state. Form fields: unit number, type picker, floor (optional), monthly rent. On save → navigate to new unit's detail | MVP |
+| No Edit Property | Pencil icon in header → edit form (name, address, type, provider, rate) | MVP |
+| Edit rate specifically | Inline pencil next to Default Rate row → single-field modal. Rate changes often, no need for full edit screen just for rate | MVP |
+| Property type not shown | Show as subtitle under property name in header: "Sunrise Apts · Boarding House" | MVP |
+| No income roll-up | 5th stat tile next to occupancy row: total monthly income from active leases only | MVP |
+| Vacant unit has no quick action | Show small "Invite" pill button directly on vacant unit card row alongside the chevron | MVP |
+| Maintenance context missing | Show open request count badge on unit card (red dot with number) | MVP |
+| Documents | Stub "View documents" row in info card, no screen yet | Stub now |
+| Delete/Archive property | 3-dot menu in header — do NOT build yet. Needs soft-delete + cascade consideration | Post-MVP |
+
+**Unit type display logic:**
+- All types (Studio/1BR/2BR/3BR/Room/Whole Unit) follow identical app logic — type is a label only
+- Bedspace exception: icon changes to `bed-outline`, unit number placeholder changes to "e.g. Bedspace 1"
+- No branching logic in lease, payments, or tenant flow based on unit type
+
+---
+
+### Unit Detail `/(landlord)/properties/[id]/units/[unitId]`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Maintenance button goes nowhere | Navigate to maintenance list with `unitId` filter param. No new screen needed | MVP |
+| Current month rent status invisible | Colored pill inside status banner: "January · Paid ✓" / "Pending" / "Overdue". Taps to that payment's detail | MVP |
+| No Rent Increase button | Small "Request Rent Increase" link row at bottom of Active Lease card. Only show when unit is occupied | MVP |
+| Co-tenants are plain text | Replace with same row style as primary tenant — avatar + name + View button → `tenants/[id]` | MVP |
+| No payment history shortcut | One tappable "View Payment History" row below quick action buttons → payments filtered to this lease | MVP |
+| No Edit Unit | Pencil icon in header → form for unit number, type, floor only. Monthly rent is NOT editable here — use Rent Increase | MVP |
+| No status change | "Change Status" link in status banner → bottom sheet (Occupied / Vacant / Under Maintenance). Hidden when active lease exists | MVP |
+| No utility bills section | Skip — belongs on Tenant Detail, not Unit Detail | Post-MVP |
+| Documents | Stub "View documents" row at bottom of lease card | Stub now |
+
+---
+
+### Payments List `/(landlord)/payments`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| No Record Payment button | + button in header navigates to `payments/record` | MVP |
+| "Failed to load payments" error | Replace with icon + "Couldn't load payments right now" + "Pull down to try again" | MVP |
+
+---
+
+### Maintenance List `/(landlord)/maintenance`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Needs `unitId` filter support | Accept optional `unitId` query param, pre-filter list when present. Used by Unit Detail Maintenance button | MVP |
+
+---
+
+### Landlord More `/(landlord)/more`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Notifications row goes nowhere | Remove chevron, make it non-tappable until notifications screen is built | MVP |
+| About RentCo row goes nowhere | Same — remove chevron or wire to a simple static screen | MVP |
+
+---
+
+### Tenant Home `/(tenant)/index`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| "Upload Payment Receipt" button does nothing | Navigate to tenant payments list, then tenant selects which payment to upload for | MVP |
+| "View all" payments does nothing | Navigate to payments tab | MVP |
+| "View all" utilities does nothing | Navigate to utilities tab | MVP |
+| "New Request" maintenance does nothing | Navigate to `/(tenant)/maintenance/new` | MVP |
+| Individual payment rows not tappable | Navigate to `/(tenant)/payments/[id]` | MVP |
+| Individual utility rows not tappable | Navigate to `/(tenant)/utilities/[id]` | MVP |
+| Individual maintenance rows not tappable | Navigate to `/(tenant)/maintenance/[id]` | MVP |
+
+---
+
+### Tenant Payments List `/(tenant)/payments`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Rows not tappable | Navigate to `/(tenant)/payments/[id]` | MVP |
+| No filter tabs | Add All / Pending / Confirmed / Overdue tabs same as landlord side | MVP |
+| No Upload Receipt shortcut | Upload Receipt button in header — goes to payments list (user selects which payment) | MVP |
+
+---
+
+### Tenant Maintenance List `/(tenant)/maintenance`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| "New Request" button does nothing | Navigate to `/(tenant)/maintenance/new` | MVP |
+| Rows not tappable | Navigate to `/(tenant)/maintenance/[id]` | MVP |
+
+---
+
+### Tenant Utilities List `/(tenant)/utilities`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Rows not tappable | Navigate to `/(tenant)/utilities/[id]` | MVP |
+| No Upload Bill button | Upload icon in header → `/(tenant)/utilities/[id]` (user selects which bill) | MVP |
+
+---
+
 ## Known Deferred Items (Post-MVP)
 
 Per `CLAUDE.md` — do not build these until explicitly instructed:
