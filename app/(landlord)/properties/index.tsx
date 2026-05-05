@@ -11,7 +11,8 @@ function PropertyCard({ property, onPress }: { property: PropertyWithUnits; onPr
   const units = property.unit ?? [];
   const total = units.length;
   const occupied = units.filter(u => u.status === 'occupied').length;
-  const vacant = total - occupied;
+  const vacant = units.filter(u => u.status === 'vacant').length;
+  const underMaintenance = units.filter(u => u.status === 'under_maintenance').length;
   const occupancyPct = total > 0 ? Math.round((occupied / total) * 100) : 0;
 
   return (
@@ -33,6 +34,7 @@ function PropertyCard({ property, onPress }: { property: PropertyWithUnits; onPr
           <Pill icon="grid-outline" value={`${total} units`} />
           <Pill icon="home-outline" value={`${occupied} occupied`} color="#15803D" />
           {vacant > 0 && <Pill icon="key-outline" value={`${vacant} vacant`} color="#B45309" />}
+          {underMaintenance > 0 && <Pill icon="construct-outline" value={`${underMaintenance} maintenance`} color="#6B7280" />}
           <View style={{ flex: 1, alignItems: 'flex-end' }}>
             <OccupancyBar pct={occupancyPct} />
           </View>
@@ -109,8 +111,9 @@ export default function PropertiesScreen() {
         </View>
       ) : error ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-          <Ionicons name="alert-circle-outline" size={40} color="#DC2626" />
-          <Text style={{ color: '#6B7280', marginTop: 10, textAlign: 'center' }}>Failed to load properties</Text>
+          <Ionicons name="alert-circle-outline" size={40} color="#9CA3AF" />
+          <Text style={{ fontSize: 16, fontWeight: '600', color: '#374151', marginTop: 12, textAlign: 'center' }}>{"Couldn't load your properties right now"}</Text>
+          <Text style={{ fontSize: 14, color: '#9CA3AF', marginTop: 4, textAlign: 'center' }}>Pull down to try again</Text>
         </View>
       ) : filtered.length === 0 ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
