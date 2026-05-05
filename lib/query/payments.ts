@@ -220,6 +220,8 @@ export function useRecordPayment() {
           throw updateErr;
         }
       }
+
+      return inserted.id;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-payments'] });

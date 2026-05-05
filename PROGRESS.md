@@ -306,7 +306,7 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 | Receipt not visible | Show receipt thumbnail or "View Receipt" row when tenant has uploaded one (`document` table, `entity_type = 'rent_payment'`, `doc_type = 'receipt'`). Show "Awaiting Receipt" note when nothing uploaded | MVP |
 | OR PDF no download/share | Add "Download OR" / "Share OR" button below OR number when `isPaid && or_number`. Calls `generate-or-pdf` edge function | MVP |
 | Amount hero label wrong when paid | Change label from "Amount Due" to "Amount Paid" when `isPaid`, show `amount_paid` value. For partial show both: "₱X paid of ₱X due" | MVP |
-| Tenant card not tappable | Add `onPress={() => router.push('/(landlord)/tenants/${tenantId}')}` to tenant card | MVP |
+| Tenant card not tappable | Add `` onPress={() => router.push(`/(landlord)/tenants/${tenantId}`) } `` to tenant card | MVP |
 | Overdue has no days context | When status is `overdue`, show "X days overdue" below the status badge in the header. Calculate from `payment_date` or lease due date | MVP |
 | No action for partial balance | No button needed — landlord records a new payment from Record Payment screen. Add a note: "To record remaining balance, use Record Payment" as a small hint text below the partial breakdown | MVP |
 
@@ -318,8 +318,8 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 |---|---|---|
 | No photos/attachments | Add "Photos" section between Description and Timeline. Query `document` table: `entity_type = 'maintenance_request'`, `entity_id = request.id`. Horizontal scroll of thumbnails, tap to full screen. Show "No photos attached" when empty | MVP |
 | Reported By not tappable | Replace plain ListRow with tappable row + "View" pill → `/(landlord)/tenants/${request.tenant.id}`. Only show if `tenant.id` exists | MVP |
-| Unit not tappable | Make Unit row tappable → `/(landlord)/properties/${unit.property.id}/units/${unit.id}`. Add `property.id` to `useMaintenanceRequest` query select | MVP |
-| No landlord notes | Add "Notes" card below Description. Show `landlord_notes` if set. Pencil icon → text input modal (multiline, Save). On save update `maintenance_request.landlord_notes`. Show "Visible to tenant" label on the card | MVP |
+| Unit not tappable | Make Unit row tappable → `` `/(landlord)/properties/${unit.property.id}/units/${unit.id}` `` — `property.id` is already selected in the query | MVP |
+| No landlord notes | Add "Notes" card below Description. Show `landlord_notes` if set. Pencil icon → text input modal (multiline, Save). On save update `maintenance_request.landlord_notes`. Show "Visible to tenant" label on the card. **Requires migration: add `landlord_notes text` column to `maintenance_request` table + update `useMaintenanceRequest` query to select it** | MVP |
 | No open duration context | Below status badge in header add: "Open for X days" (from `created_at` to today) or "Resolved in X days" (from `created_at` to `resolved_at`). Small gray text, no extra card | MVP |
 | No push notification hint | Add small gray helper text below status stepper: "Tenant will be notified when status changes." Only show when unit has an active tenant | MVP |
 | Description hidden when null | Always render Description card. When `description` is null show "No description provided" in gray text instead of hiding the card | MVP |
@@ -342,7 +342,7 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 | Payment date not editable | Replace display-only date with tappable date picker. Default today, allow any past date, block future dates | MVP |
 | No duplicate payment warning | After lease + period selected, query `rent_payment` for same `lease_id + period_month + period_year`. If exists show `AlertBox` warning — not a hard block | MVP |
 | No search on tenant list | Search input above lease list, filters by tenant name or unit number client-side. Only show when more than 5 leases exist | MVP |
-| Navigates back instead of to new payment | `useRecordPayment` mutation already selects inserted `id` — return it to caller, navigate to `/(landlord)/payments/${newId}` on success | MVP |
+| Navigates back instead of to new payment | `useRecordPayment` mutationFn now returns `inserted.id` — use the return value from `mutateAsync` to navigate to `` `/(landlord)/payments/${newId}` `` on success | MVP |
 | Partial balance context invisible | When lease + period selected, show info banner if existing partial payment found: "Existing partial: ₱X paid, ₱X remaining." Lightweight query triggered by both selections | MVP |
 | Empty lease list has no guidance | Replace "No active leases found" with standard empty state: icon + "No Active Leases" + "Add a property and invite a tenant to get started" + link to properties | MVP |
 | No notes/memo field | Optional single-line "Notes" input below date field. Check if `notes` or `remarks` column exists on `rent_payment` before building — post-MVP if column absent | Post-MVP |
@@ -591,6 +591,8 @@ Screen doesn't exist yet. What it needs:
 
 Screen doesn't exist yet. What it needs:
 
+> **Navigation note:** This screen is not a visible tab. It must be registered as a hidden tab (`href: null`) in `(landlord)/_layout.tsx` so Expo Router can resolve the route. Access entry point: "Documents" row in the More screen (see More gap below).
+
 | Element | Notes |
 |---|---|
 | Header | "Documents" title — no + button. Uploads happen from source screens |
@@ -611,6 +613,8 @@ Screen doesn't exist yet. What it needs:
 ### Tenant Documents `/(tenant)/documents`
 
 Screen doesn't exist yet. Mirrors landlord documents but scoped to the tenant's own files only.
+
+> **Navigation note:** Not a visible tab. Must be registered as a hidden tab (`href: null`) in `(tenant)/_layout.tsx`. Access entry point: "Documents" row in the tenant More screen.
 
 | Element | Notes |
 |---|---|
@@ -658,7 +662,7 @@ Screen doesn't exist yet. Mirrors landlord documents but scoped to the tenant's 
 |---|---|---|
 | Screen doesn't exist yet | Build with: back arrow, period + status badge header, amount hero (green/amber), payment details card, receipt upload/view section, OR number display | MVP |
 | Receipt upload missing | Upload button → document picker → save to `document` table (`entity_type='rent_payment'`, `doc_type='receipt'`) | MVP |
-| Advance payments labelled "Pending" | Future-period payments show "Advance" badge on both list and detail, not "Pending" | MVP |
+| Advance payments labelled "Pending" | Future-period payments show "Advance" badge on both list and detail, not "Pending". **Detection logic: compare `period_year`/`period_month` against current date — NOT based on `payment_method = 'advance'` which is a different concept (how it was paid, not when)** | MVP |
 | No Download OR button | "Download OR" calls `generate-or-pdf` edge function, opens PDF viewer | Post-MVP |
 | No payment grouping in list | Tenant payment list should group rows: Overdue → This Month → Upcoming (Advance) | Post-MVP |
 
@@ -671,7 +675,7 @@ Screen doesn't exist yet. Mirrors landlord documents but scoped to the tenant's 
 | Screen doesn't exist yet | Build with: back arrow, utility type + period header + status badge, amount hero (kWh consumed + rate + total), bill details card, "View Bill PDF" if available | MVP |
 | Tenant can't upload bill PDF | Add "Upload Bill PDF" button → saves to `document` table (`entity_type='utility_bill'`, `doc_type='bill'`). No LLM parsing for tenant uploads — just attachment | MVP |
 | Rate per kWh must use snapshotted value | Display `bill.rate_per_kwh` (snapshotted at generation time) — never re-fetch from property | MVP (correctness) |
-| No due date shown | Show `utility_bill.due_date` if present | MVP |
+| No due date shown | Show `utility_bill.due_date` if present. **`due_date` does not exist in the current schema — requires migration: add `due_date date` column to `utility_bill` table** | Post-MVP |
 
 ---
 
