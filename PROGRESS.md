@@ -568,6 +568,29 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 
 ---
 
+### Tenant Payment Detail `/(tenant)/payments/[id]`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Screen doesn't exist yet | Build with: back arrow, period + status badge header, amount hero (green/amber), payment details card, receipt upload/view section, OR number display | MVP |
+| Receipt upload missing | Upload button → document picker → save to `document` table (`entity_type='rent_payment'`, `doc_type='receipt'`) | MVP |
+| Advance payments labelled "Pending" | Future-period payments show "Advance" badge on both list and detail, not "Pending" | MVP |
+| No Download OR button | "Download OR" calls `generate-or-pdf` edge function, opens PDF viewer | Post-MVP |
+| No payment grouping in list | Tenant payment list should group rows: Overdue → This Month → Upcoming (Advance) | Post-MVP |
+
+---
+
+### Tenant Utilities Detail `/(tenant)/utilities/[id]`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Screen doesn't exist yet | Build with: back arrow, utility type + period header + status badge, amount hero (kWh consumed + rate + total), bill details card, "View Bill PDF" if available | MVP |
+| Tenant can't upload bill PDF | Add "Upload Bill PDF" button → saves to `document` table (`entity_type='utility_bill'`, `doc_type='bill'`). No LLM parsing for tenant uploads — just attachment | MVP |
+| Rate per kWh must use snapshotted value | Display `bill.rate_per_kwh` (snapshotted at generation time) — never re-fetch from property | MVP (correctness) |
+| No due date shown | Show `utility_bill.due_date` if present | MVP |
+
+---
+
 ### Tenant Maintenance List `/(tenant)/maintenance`
 
 | Gap | Recommendation | Priority |
@@ -577,12 +600,88 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 
 ---
 
+### Tenant Maintenance Detail `/(tenant)/maintenance/[id]`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Screen doesn't exist yet | Build with: back arrow, title + status badge header, category/priority hero (same icons as landlord), description card, timeline card, read-only status progress strip (no buttons — tenant can't change status), photo gallery if photos attached | MVP |
+| Emergency priority visual cue | Emergency gets a distinct red banner at top of screen | Post-MVP |
+| Landlord notes not shown | If landlord added notes during status update, show "Landlord Update" card with note text | Post-MVP |
+
+---
+
+### Tenant Maintenance New `/(tenant)/maintenance/new`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Screen doesn't exist yet | Build with: back arrow, title input (required), category chip selector (8 categories), priority selector with color cues (Low/Medium/High/Emergency), description textarea (optional), photo upload 1–3 images, Submit button | MVP |
+| Unit auto-assigned | Derive `unit_id` from tenant's active lease — never ask tenant to pick a unit | MVP |
+| Emergency priority confirmation | When Emergency is selected, show inline warning: "This will alert your landlord immediately" | MVP |
+
+---
+
 ### Tenant Utilities List `/(tenant)/utilities`
 
 | Gap | Recommendation | Priority |
 |---|---|---|
 | Rows not tappable | Navigate to `/(tenant)/utilities/[id]` | MVP |
 | No Upload Bill button | Upload icon in header → `/(tenant)/utilities/[id]` (user selects which bill) | MVP |
+
+---
+
+### Tenant More `/(tenant)/more`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Deposit balance missing | Add "Deposit Balance" row to Lease Summary — `lease.security_deposit_balance` | MVP |
+| No landlord contact info | Add "Your Landlord" mini-card showing landlord name + phone — needed for emergencies | MVP |
+| No Edit Contact Info | Pencil icon on profile card → allow tenant to update phone + email | Post-MVP |
+| Lease end proximity warning | Amber banner when lease ends within 30 days: "Your lease ends on [date]" | Post-MVP |
+| No Notifications toggle | Add Notifications row, non-tappable in MVP (no chevron) | Stub |
+
+---
+
+### Landlord More `/(landlord)/more`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Notifications row is dead | Remove chevron, make row non-tappable (`View` instead of `TouchableOpacity`) | Stub |
+| About RentCo row is dead | Same treatment as Notifications — remove chevron | Stub |
+| No Edit Profile | Pencil icon on profile card → update name, phone | Post-MVP |
+
+---
+
+### Login `/(auth)/login`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| "RentCo" text should be logo image | Replace `<Text>RentCo</Text>` with `<Image source={require('logo-horizontal.png')}` — consistent with headers | MVP |
+| No Forgot Password link | Add "Forgot password?" link below Sign In button → Supabase `resetPasswordForEmail()` | Post-MVP |
+
+---
+
+### Register `/(auth)/register`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| No phone number field | Add optional Phone field — landlord phone shown on More but never collected at signup | Post-MVP |
+
+---
+
+### Join `/(auth)/join` (Tenant Invite)
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Generic welcome message | Tenant name is in the invite record — show "Welcome, [name]!" above the form | MVP |
+| No confirm password field | Add Confirm Password field — reduces account setup errors | Post-MVP |
+
+---
+
+### Deactivated `/(auth)/deactivated`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Uses emoji 🔒 | Replace with `<Ionicons name="lock-closed-outline" size={48} color="#9CA3AF" />` — consistent with rest of app | MVP |
 
 ---
 
