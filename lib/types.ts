@@ -103,7 +103,7 @@ export type MaintenanceRequest = {
   reported_by: string | null;
   title: string;
   description: string | null;
-  category: 'plumbing' | 'electrical' | 'structural' | 'appliance' | 'pest' | 'other';
+  category: 'plumbing' | 'electrical' | 'structural' | 'appliance' | 'pest' | 'cleaning' | 'internet' | 'other';
   priority: 'low' | 'medium' | 'high' | 'emergency';
   status: 'open' | 'assigned' | 'in_progress' | 'resolved' | 'closed';
   resolved_at: string | null;

@@ -91,31 +91,33 @@ export function usePayment(id?: string) {
 export function useConfirmPayment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (paymentId: string) => {
-      // Claim OR number first
+    mutationFn: async ({ paymentId, currentPaymentDate }: { paymentId: string; currentPaymentDate?: string | null }) => {
       const { data: orNumber, error: orErr } = await supabase
         .rpc('claim_or_number', { p_payment_id: paymentId });
       if (orErr) throw orErr;
 
-      // Confirm payment with OR number
+      const update: Record<string, unknown> = {
+        status: 'paid',
+        or_number: orNumber,
+        confirmed_by: 'landlord',
+        confirmed_at: new Date().toISOString(),
+      };
+      // Only set payment_date if none was recorded — preserve the date the landlord entered
+      if (!currentPaymentDate) {
+        update.payment_date = new Date().toISOString().split('T')[0];
+      }
+
       const { error } = await supabase
         .from('rent_payment')
-        .update({
-          status: 'paid',
-          or_number: orNumber,
-          confirmed_by: 'landlord',
-          confirmed_at: new Date().toISOString(),
-          payment_date: new Date().toISOString().split('T')[0],
-        })
+        .update(update)
         .eq('id', paymentId);
 
       if (error) {
-        // Payment update failed — void the OR so the sequence stays clean
         await supabase.rpc('void_or_number', { p_or_number: orNumber });
         throw error;
       }
     },
-    onSuccess: (_data, paymentId) => {
+    onSuccess: (_data, { paymentId }) => {
       queryClient.invalidateQueries({ queryKey: ['all-payments'] });
       queryClient.invalidateQueries({ queryKey: ['payment', paymentId] });
     },
@@ -213,8 +215,13 @@ export function useRecordPayment() {
           .from('rent_payment')
           .update({ or_number: orNumber })
           .eq('id', inserted.id);
-        if (updateErr) throw updateErr;
+        if (updateErr) {
+          await supabase.rpc('void_or_number', { p_or_number: orNumber });
+          throw updateErr;
+        }
       }
+
+      return inserted.id;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['all-payments'] });

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../lib/auth';
@@ -216,7 +216,7 @@ export default function TenantHome() {
       {/* Dark green header */}
       <View style={{ backgroundColor: PRIMARY, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 20 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
-          <Text style={{ flex: 1, fontSize: 22, fontWeight: '800', color: '#fff', letterSpacing: -0.5 }}>RentCo</Text>
+          <Image source={require('../../assets/images/logo-horizontal-white.png')} style={{ height: 28, width: 120 }} resizeMode="contain" />
           <TouchableOpacity style={{ marginRight: 12 }} activeOpacity={0.7}>
             <Ionicons name="notifications-outline" size={24} color="rgba(255,255,255,0.85)" />
           </TouchableOpacity>

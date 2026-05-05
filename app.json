@@ -4,7 +4,7 @@
     "slug": "rentco",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logo-icon-dark.png",
     "scheme": "rentco",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -32,7 +32,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/logo-icon-dark.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#1B3C34"

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 
 export type MaintenanceRow = {
@@ -33,6 +33,71 @@ export function useMaintenanceRequests(filter: Filter = 'all') {
       const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as MaintenanceRow[];
+    },
+  });
+}
+
+export type MaintenanceDetail = {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  priority: string;
+  status: string;
+  created_at: string;
+  resolved_at: string | null;
+  unit: {
+    id: string;
+    unit_number: string;
+    property: { id: string; name: string } | null;
+  } | null;
+  tenant: { id: string; name: string } | null;
+};
+
+export type MaintenanceStatus = 'open' | 'assigned' | 'in_progress' | 'resolved' | 'closed';
+
+export function useMaintenanceRequest(id?: string) {
+  return useQuery({
+    queryKey: ['maintenance-request', id],
+    enabled: !!id,
+    queryFn: async (): Promise<MaintenanceDetail> => {
+      const { data, error } = await supabase
+        .from('maintenance_request')
+        .select(`
+          id, title, description, category, priority, status, created_at, resolved_at,
+          unit:unit_id (id, unit_number, property:property_id (id, name)),
+          tenant:tenant_id (id, name)
+        `)
+        .eq('id', id!)
+        .single();
+      if (error) throw error;
+      return data as MaintenanceDetail;
+    },
+  });
+}
+
+export function useUpdateMaintenanceStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: MaintenanceStatus }) => {
+      const updates: Record<string, unknown> = { status };
+      if (status === 'resolved') {
+        updates.resolved_at = new Date().toISOString();
+      } else if (status === 'open' || status === 'assigned' || status === 'in_progress') {
+        // Clear resolved_at only when reverting to a pre-resolution state
+        updates.resolved_at = null;
+      }
+      // 'closed' preserves resolved_at — it means resolved AND confirmed by tenant
+
+      const { error } = await supabase
+        .from('maintenance_request')
+        .update(updates)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_data, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance-request', id] });
     },
   });
 }

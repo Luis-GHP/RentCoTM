@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -144,7 +144,7 @@ export default function LandlordDashboard() {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
-        <Text style={{ flex: 1, fontSize: 22, fontWeight: '800', color: PRIMARY, letterSpacing: -0.5 }}>RentCo</Text>
+        <Image source={require('../../assets/images/logo-horizontal.png')} style={{ height: 28, width: 120 }} resizeMode="contain" />
         <TouchableOpacity style={{ marginRight: 12 }} activeOpacity={0.7}>
           <Ionicons name="notifications-outline" size={24} color="#374151" />
         </TouchableOpacity>

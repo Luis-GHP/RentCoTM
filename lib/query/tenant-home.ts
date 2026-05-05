@@ -64,7 +64,7 @@ export function useRecentTenantPayments(leaseId?: string) {
         .from('rent_payment')
         .select('*')
         .eq('lease_id', leaseId!)
-        .in('status', ['paid'])
+        .eq('status', 'paid')
         .order('period_year', { ascending: false })
         .order('period_month', { ascending: false })
         .limit(3);
