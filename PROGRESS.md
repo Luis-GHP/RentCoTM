@@ -306,6 +306,20 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 
 ---
 
+### Maintenance Detail `/(landlord)/maintenance/[id]`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| No photos/attachments | Add "Photos" section between Description and Timeline. Query `document` table: `entity_type = 'maintenance_request'`, `entity_id = request.id`. Horizontal scroll of thumbnails, tap to full screen. Show "No photos attached" when empty | MVP |
+| Reported By not tappable | Replace plain ListRow with tappable row + "View" pill → `/(landlord)/tenants/${request.tenant.id}`. Only show if `tenant.id` exists | MVP |
+| Unit not tappable | Make Unit row tappable → `/(landlord)/properties/${unit.property.id}/units/${unit.id}`. Add `property.id` to `useMaintenanceRequest` query select | MVP |
+| No landlord notes | Add "Notes" card below Description. Show `landlord_notes` if set. Pencil icon → text input modal (multiline, Save). On save update `maintenance_request.landlord_notes`. Show "Visible to tenant" label on the card | MVP |
+| No open duration context | Below status badge in header add: "Open for X days" (from `created_at` to today) or "Resolved in X days" (from `created_at` to `resolved_at`). Small gray text, no extra card | MVP |
+| No push notification hint | Add small gray helper text below status stepper: "Tenant will be notified when status changes." Only show when unit has an active tenant | MVP |
+| Description hidden when null | Always render Description card. When `description` is null show "No description provided" in gray text instead of hiding the card | MVP |
+
+---
+
 ### Payments List `/(landlord)/payments`
 
 | Gap | Recommendation | Priority |
