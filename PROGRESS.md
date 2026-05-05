@@ -246,13 +246,16 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 
 ---
 
-### Landlord Dashboard
+### Landlord Dashboard `/(landlord)/index`
 
-| Gap | Recommendation |
-|---|---|
-| Bell icon does nothing | Post-MVP — notifications list not built yet. Remove tappable feel or leave as-is |
-| Avatar does nothing | Tap navigates to More/Profile tab |
-| Alert rows do nothing | Overdue alert → Payments filtered to overdue. Expiring leases → Tenants. Pending confirmations → Payments filtered to pending |
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Bell icon has no `onPress` | Route to `/(landlord)/more` for now (notifications not built). Remove chevron feel — make it a stub icon only | Stub |
+| Avatar has no `onPress` | `router.push('/(landlord)/more')` | MVP |
+| Alert rows not tappable | Overdue → `/(landlord)/payments`, Expiring leases → `/(landlord)/tenants`, Pending confirmations → `/(landlord)/payments` | MVP |
+| "Upload Utility Bill" quick action routes wrong | Goes to `/(landlord)/utilities` (list) — should go directly to `/(landlord)/utilities/upload` | MVP |
+| No pull-to-refresh | Add `RefreshControl` — refetch all dashboard queries on pull | Post-MVP |
+| No error state on Summary/Portfolio cards | If fetch fails, cards silently show nothing. Add inline "Couldn't load" fallback | Post-MVP |
 
 ---
 
@@ -527,11 +530,24 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 
 ---
 
+### Properties List `/(landlord)/properties`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Error message is dev-facing | Replace with icon + "Couldn't load your properties right now" + "Pull down to try again" — Step G covers the fix | MVP |
+| Under-maintenance units lumped with vacant | Add a third pill with wrench icon + count for `under_maintenance` units, shown only when count > 0 | MVP |
+| No pull-to-refresh | Add `RefreshControl` on `ScrollView` using `refetch()` from `useProperties()` | Post-MVP |
+
+---
+
 ### Maintenance List `/(landlord)/maintenance`
 
 | Gap | Recommendation | Priority |
 |---|---|---|
-| Needs `unitId` filter support | Accept optional `unitId` query param, pre-filter list when present. Used by Unit Detail Maintenance button | MVP |
+| No error state | `error` not destructured from `useMaintenanceRequests` — blank screen on fetch failure. Add icon + "Couldn't load requests right now" | MVP |
+| "Closed" status missing from filter | Add "Closed" tab or include `closed` in the Resolved filter | MVP |
+| Needs `unitId` filter support | Accept optional `unitId` query param, pre-filter list when present. Used by Unit Detail Maintenance button — Step I covers the fix | MVP |
+| No + button | Landlord may want to log a request themselves (vacant unit issue, inspection finding). Add Post-MVP screen `/(landlord)/maintenance/new` | Post-MVP |
 
 ---
 
@@ -541,6 +557,71 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 |---|---|---|
 | Notifications row goes nowhere | Remove chevron, make it non-tappable until notifications screen is built | MVP |
 | About RentCo row goes nowhere | Same — remove chevron or wire to a simple static screen | MVP |
+
+---
+
+### Rent Increase `/(landlord)/tenants/[id]/rent-increase`
+
+Screen doesn't exist yet. What it needs:
+
+| Element | Notes |
+|---|---|
+| Header | Back arrow + "Rent Increase" + tenant name + unit number subtitle |
+| Current rent (read-only) | Displayed from `lease.monthly_rent` — the frozen copy, never `unit.monthly_rent` |
+| New rent input | Currency input, decimal-pad keyboard |
+| Live % increase indicator | Computed as user types: `((new - current) / current * 100).toFixed(1)%` — green if ≤7%, amber if >7% |
+| Effective date | Date input, defaults to 1st of next month |
+| RA 9653 warning | Amber banner when `lease.is_rent_controlled = true` AND increase >7%: "This exceeds the 7% annual cap under RA 9653. You may still proceed but should consult DHSUD." — warn only, never block |
+| Reason field | Optional free text, stored for record-keeping |
+| Submit | Calls `record_rent_increase(p_lease_id, p_new_rent, p_effective_date)` RPC — never a direct DB update |
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Screen doesn't exist | Build as described above | MVP |
+| Must use RPC not direct update | `record_rent_increase()` only — per CLAUDE.md rule | MVP (correctness) |
+| RA 9653: warn not block | Amber banner + confirm still enabled — landlord decides | MVP (legal) |
+| Current rent source | Read from `lease.monthly_rent` only | MVP (correctness) |
+
+---
+
+### Landlord Documents `/(landlord)/documents`
+
+Screen doesn't exist yet. What it needs:
+
+| Element | Notes |
+|---|---|
+| Header | "Documents" title — no + button. Uploads happen from source screens |
+| Filter tabs | All / Receipts / IDs / Bills / Photos |
+| Document rows | File name, entity it belongs to ("Juan dela Cruz · Receipt · May 2026"), upload date, file type icon |
+| Tappable rows | Opens PDF viewer or image viewer |
+| Grouped by | Month or entity type for scanning |
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Screen doesn't exist | Build with filter tabs, document list rows, file viewer | MVP |
+| No standalone upload | By design — link back to source screen ("Go to payment detail to upload receipt") | MVP |
+| PH gov ID type labels | Display human-readable labels (PhilSys, UMID, SSS, etc.) not raw `doc_type` DB codes | MVP |
+| OR PDFs | Payment ORs generated by edge function should auto-appear here under Receipts | MVP |
+
+---
+
+### Tenant Documents `/(tenant)/documents`
+
+Screen doesn't exist yet. Mirrors landlord documents but scoped to the tenant's own files only.
+
+| Element | Notes |
+|---|---|
+| Header | "Documents" title — no + button |
+| Filter tabs | All / Receipts / Bills / IDs |
+| Document rows | Their receipts, utility bill PDFs, gov IDs, lease OR copies |
+| Tappable rows | Opens file viewer |
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Screen doesn't exist | Build with filter tabs, document rows scoped to tenant, file viewer | MVP |
+| OR PDFs auto-appear | When landlord confirms payment, the generated OR PDF auto-attaches and appears here — tenant doesn't need to do anything | MVP |
+| No upload from here | Guide tenant: "To upload a receipt, go to Payments → [month]" | MVP |
+| RLS enforced at DB | Tenant must only ever see their own documents — RLS policy on `document` table handles this | MVP (security) |
 
 ---
 
