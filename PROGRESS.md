@@ -329,6 +329,20 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 
 ---
 
+### Record Payment `/(landlord)/payments/record`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Payment date not editable | Replace display-only date with tappable date picker. Default today, allow any past date, block future dates | MVP |
+| No duplicate payment warning | After lease + period selected, query `rent_payment` for same `lease_id + period_month + period_year`. If exists show `AlertBox` warning — not a hard block | MVP |
+| No search on tenant list | Search input above lease list, filters by tenant name or unit number client-side. Only show when more than 5 leases exist | MVP |
+| Navigates back instead of to new payment | `useRecordPayment` mutation already selects inserted `id` — return it to caller, navigate to `/(landlord)/payments/${newId}` on success | MVP |
+| Partial balance context invisible | When lease + period selected, show info banner if existing partial payment found: "Existing partial: ₱X paid, ₱X remaining." Lightweight query triggered by both selections | MVP |
+| Empty lease list has no guidance | Replace "No active leases found" with standard empty state: icon + "No Active Leases" + "Add a property and invite a tenant to get started" + link to properties | MVP |
+| No notes/memo field | Optional single-line "Notes" input below date field. Check if `notes` or `remarks` column exists on `rent_payment` before building — post-MVP if column absent | Post-MVP |
+
+---
+
 ### Maintenance List `/(landlord)/maintenance`
 
 | Gap | Recommendation | Priority |
