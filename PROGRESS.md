@@ -293,6 +293,19 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 
 ---
 
+### Payment Detail `/(landlord)/payments/[id]`
+
+| Gap | Recommendation | Priority |
+|---|---|---|
+| Receipt not visible | Show receipt thumbnail or "View Receipt" row when tenant has uploaded one (`document` table, `entity_type = 'rent_payment'`, `doc_type = 'receipt'`). Show "Awaiting Receipt" note when nothing uploaded | MVP |
+| OR PDF no download/share | Add "Download OR" / "Share OR" button below OR number when `isPaid && or_number`. Calls `generate-or-pdf` edge function | MVP |
+| Amount hero label wrong when paid | Change label from "Amount Due" to "Amount Paid" when `isPaid`, show `amount_paid` value. For partial show both: "₱X paid of ₱X due" | MVP |
+| Tenant card not tappable | Add `onPress={() => router.push('/(landlord)/tenants/${tenantId}')}` to tenant card | MVP |
+| Overdue has no days context | When status is `overdue`, show "X days overdue" below the status badge in the header. Calculate from `payment_date` or lease due date | MVP |
+| No action for partial balance | No button needed — landlord records a new payment from Record Payment screen. Add a note: "To record remaining balance, use Record Payment" as a small hint text below the partial breakdown | MVP |
+
+---
+
 ### Payments List `/(landlord)/payments`
 
 | Gap | Recommendation | Priority |
