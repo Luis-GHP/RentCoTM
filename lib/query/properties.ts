@@ -116,7 +116,7 @@ export function useUnit(unitId?: string) {
         .eq('id', unitId!)
         .single();
       if (error) throw error;
-      return data as UnitDetail;
+      return data as unknown as UnitDetail;
     },
   });
 }

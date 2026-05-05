@@ -1,10 +1,12 @@
-import { View, Text } from 'react-native';
+import { View, Text, StyleProp, ViewStyle } from 'react-native';
 
 type Variant = 'error' | 'warning' | 'info' | 'success';
 
 type Props = {
   message: string;
   variant?: Variant;
+  type?: Variant;
+  style?: StyleProp<ViewStyle>;
 };
 
 const STYLES: Record<Variant, { bg: string; border: string; text: string }> = {
@@ -14,18 +16,21 @@ const STYLES: Record<Variant, { bg: string; border: string; text: string }> = {
   success: { bg: '#F0FDF4', border: '#BBF7D0', text: '#16A34A' },
 };
 
-export function AlertBox({ message, variant = 'error' }: Props) {
-  const s = STYLES[variant];
+export function AlertBox({ message, variant, type, style }: Props) {
+  const s = STYLES[variant ?? type ?? 'error'];
   return (
     <View
-      style={{
-        backgroundColor: s.bg,
-        borderWidth: 1,
-        borderColor: s.border,
-        borderRadius: 10,
-        padding: 12,
-        marginBottom: 16,
-      }}
+      style={[
+        {
+          backgroundColor: s.bg,
+          borderWidth: 1,
+          borderColor: s.border,
+          borderRadius: 10,
+          padding: 12,
+          marginBottom: 16,
+        },
+        style,
+      ]}
     >
       <Text style={{ fontSize: 13, color: s.text }}>{message}</Text>
     </View>

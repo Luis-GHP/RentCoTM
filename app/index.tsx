@@ -24,6 +24,7 @@ export default function Index() {
   }
 
   if (!session) return <Redirect href="/(auth)/login" />;
+  if (!profile) return null;
   if (!profile.is_active) return <Redirect href="/(auth)/deactivated" />;
   if (profile.role === 'landlord') return <Redirect href="/(landlord)" />;
   return <Redirect href="/(tenant)" />;

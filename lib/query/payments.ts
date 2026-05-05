@@ -36,7 +36,7 @@ export function useAllPayments() {
         .order('period_year', { ascending: false })
         .order('period_month', { ascending: false });
       if (error) throw error;
-      return data as PaymentRow[];
+      return data as unknown as PaymentRow[];
     },
   });
 }
@@ -83,7 +83,7 @@ export function usePayment(id?: string) {
         .eq('id', id!)
         .single();
       if (error) throw error;
-      return data as PaymentDetail;
+      return data as unknown as PaymentDetail;
     },
   });
 }
@@ -165,7 +165,7 @@ export function useActiveLeases() {
         .eq('status', 'active')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []) as ActiveLease[];
+      return (data ?? []) as unknown as ActiveLease[];
     },
   });
 }

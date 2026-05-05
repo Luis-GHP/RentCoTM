@@ -1,12 +1,12 @@
 import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../lib/auth';
-import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
-import { EmptyState } from '../../components/shared/EmptyState';
-import { StatusBadge } from '../../components/shared/StatusBadge';
-import { useTenantActiveLease, useAllTenantBills } from '../../lib/query/tenant-home';
-import { formatPHP, getMonthName } from '../../lib/format';
+import { useAuth } from '../../../lib/auth';
+import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
+import { EmptyState } from '../../../components/shared/EmptyState';
+import { StatusBadge } from '../../../components/shared/StatusBadge';
+import { useTenantActiveLease, useAllTenantBills } from '../../../lib/query/tenant-home';
+import { formatPHP, getMonthName } from '../../../lib/format';
 
 const UTILITY_ICON: Record<string, { icon: keyof typeof Ionicons.glyphMap; bg: string; color: string }> = {
   electric: { icon: 'flash',        bg: '#FFFBEB', color: '#D97706' },

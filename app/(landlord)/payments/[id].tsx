@@ -32,6 +32,7 @@ export default function PaymentDetailScreen() {
   if (isLoading) return <LoadingSpinner fullScreen />;
   if (!payment) return null;
 
+  const currentPayment = payment;
   const tenants = payment.lease?.lease_tenant ?? [];
   const primary = tenants.find(lt => lt.role === 'primary') ?? tenants[0];
   const tenantName = primary?.tenant?.name ?? 'Unknown';
@@ -53,7 +54,7 @@ export default function PaymentDetailScreen() {
           onPress: async () => {
             setBusy(true);
             try {
-              await confirmPayment.mutateAsync({ paymentId: payment.id, currentPaymentDate: payment.payment_date });
+              await confirmPayment.mutateAsync({ paymentId: currentPayment.id, currentPaymentDate: currentPayment.payment_date });
             } catch {
               Alert.alert('Error', 'Could not confirm payment. Please try again.');
             } finally {
@@ -77,7 +78,7 @@ export default function PaymentDetailScreen() {
           onPress: async () => {
             setBusy(true);
             try {
-              await markUnpaid.mutateAsync({ paymentId: payment.id, orNumber: payment.or_number });
+              await markUnpaid.mutateAsync({ paymentId: currentPayment.id, orNumber: currentPayment.or_number });
             } catch {
               Alert.alert('Error', 'Could not revert payment. Please try again.');
             } finally {

@@ -2,13 +2,13 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../lib/auth';
-import { FilterTabs } from '../../components/shared/FilterTabs';
-import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
-import { EmptyState } from '../../components/shared/EmptyState';
-import { StatusBadge } from '../../components/shared/StatusBadge';
-import { useTenantActiveLease, useAllTenantRequests } from '../../lib/query/tenant-home';
-import { formatDate } from '../../lib/format';
+import { useAuth } from '../../../lib/auth';
+import { FilterTabs } from '../../../components/shared/FilterTabs';
+import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
+import { EmptyState } from '../../../components/shared/EmptyState';
+import { StatusBadge } from '../../../components/shared/StatusBadge';
+import { useTenantActiveLease, useAllTenantRequests } from '../../../lib/query/tenant-home';
+import { formatDate } from '../../../lib/format';
 
 const PRIMARY = '#1B3C34';
 

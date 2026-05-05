@@ -1,12 +1,12 @@
 import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../lib/auth';
-import { LoadingSpinner } from '../../components/shared/LoadingSpinner';
-import { EmptyState } from '../../components/shared/EmptyState';
-import { StatusBadge } from '../../components/shared/StatusBadge';
-import { useTenantActiveLease, useAllTenantPayments } from '../../lib/query/tenant-home';
-import { formatPHP, formatDate, getMonthName } from '../../lib/format';
+import { useAuth } from '../../../lib/auth';
+import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
+import { EmptyState } from '../../../components/shared/EmptyState';
+import { StatusBadge } from '../../../components/shared/StatusBadge';
+import { useTenantActiveLease, useAllTenantPayments } from '../../../lib/query/tenant-home';
+import { formatPHP, formatDate, getMonthName } from '../../../lib/format';
 
 export default function TenantPayments() {
   const { profile } = useAuth();
