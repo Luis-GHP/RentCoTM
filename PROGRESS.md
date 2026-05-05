@@ -503,6 +503,30 @@ Also needs subdirectory `_layout.tsx` files for tenant payments, utilities, main
 
 ---
 
+### Add Property `/(landlord)/properties/add`
+
+**Header:** Back arrow + "Add Property"
+
+**Form fields:**
+- Property name — text input, required
+- Address — multiline text input, required
+- Property type — picker: Apartment / House / Condo / Boarding House / Commercial
+- Electric provider — picker: Meralco / VECO / DLPC / BENECO / NEECO / Manual
+- Average rate per kWh — numeric input, optional. Hidden when provider is "Manual". Shows approximate rate as placeholder hint (Meralco ≈ ₱11/kWh) — landlord must type their actual rate, not pre-filled
+
+**Save button:** "Add Property" — full width primary. On success → navigate to new property's detail screen
+
+**Validation:** Name + address required. Provider required. Rate required when provider is not Manual.
+
+| Decision | Recommendation |
+|---|---|
+| Label | "Average Rate per kWh" — more accurate than "default" since Meralco rates fluctuate monthly |
+| Pre-fill rate? | No — show as placeholder hint only. Landlord must type their actual rate |
+| Units added here? | No — add property first, then add units from property detail screen |
+| Provider not in list? | "Manual" option — no provider name locked, landlord enters rate freely |
+
+---
+
 ### Maintenance List `/(landlord)/maintenance`
 
 | Gap | Recommendation | Priority |
