@@ -1,44 +1,69 @@
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../../../lib/auth';
+import { FilterTabs } from '../../../components/shared/FilterTabs';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
 import { EmptyState } from '../../../components/shared/EmptyState';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
 import { useTenantActiveLease, useAllTenantPayments } from '../../../lib/query/tenant-home';
 import { formatPHP, formatDate, getMonthName } from '../../../lib/format';
 
+type Filter = 'all' | 'pending' | 'paid' | 'overdue';
+
+const FILTERS = [
+  { key: 'all' as Filter,     label: 'All' },
+  { key: 'pending' as Filter, label: 'Pending' },
+  { key: 'paid' as Filter,    label: 'Confirmed' },
+  { key: 'overdue' as Filter, label: 'Overdue' },
+];
+
 export default function TenantPayments() {
+  const [filter, setFilter] = useState<Filter>('all');
+  const router = useRouter();
   const { profile } = useAuth();
   const { data: lease, isLoading: leaseLoading } = useTenantActiveLease(profile?.tenant_id ?? undefined);
   const { data: payments, isLoading: paymentsLoading } = useAllTenantPayments(lease?.id ?? undefined);
 
   const isLoading = leaseLoading || paymentsLoading;
+  const filteredPayments = (payments ?? []).filter(p => filter === 'all' || p.status === filter);
 
   if (isLoading) return <LoadingSpinner fullScreen />;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
       {/* Header */}
-      <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6', paddingHorizontal: 20, paddingVertical: 14 }}>
-        <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827' }}>Payments</Text>
+      <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 4 }}>
+          <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: '#111827' }}>Payments</Text>
+          <TouchableOpacity onPress={() => router.push('/(tenant)/payments')} activeOpacity={0.7}>
+            <Ionicons name="cloud-upload-outline" size={24} color="#1B3C34" />
+          </TouchableOpacity>
+        </View>
+        <FilterTabs tabs={FILTERS} active={filter} onChange={setFilter} />
       </View>
 
       {!lease ? (
-        <EmptyState icon="home-outline" title="No active lease" subtitle="Contact your landlord if you think this is an error." />
+        <EmptyState icon="home-outline" title="No Active Lease" subtitle="Contact your landlord if you think this is an error." />
       ) : (payments ?? []).length === 0 ? (
-        <EmptyState icon="receipt-outline" title="No payments yet" subtitle="Your payment history will appear here." />
+        <EmptyState icon="receipt-outline" title="No Payments Yet" subtitle="Your payment history will appear here." />
+      ) : filteredPayments.length === 0 ? (
+        <EmptyState icon="receipt-outline" title="No Payments Found" subtitle="Try a different filter." />
       ) : (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false}>
           <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F3F4F6', overflow: 'hidden' }}>
-            {payments!.map((p, i) => (
-              <View
+            {filteredPayments.map((p, i) => (
+              <TouchableOpacity
                 key={p.id}
+                onPress={() => router.push(`/(tenant)/payments/${p.id}`)}
+                activeOpacity={0.7}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
                   padding: 16,
-                  borderBottomWidth: i < payments!.length - 1 ? 1 : 0,
+                  borderBottomWidth: i < filteredPayments.length - 1 ? 1 : 0,
                   borderBottomColor: '#F3F4F6',
                 }}
               >
@@ -79,7 +104,7 @@ export default function TenantPayments() {
                   <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827' }}>{formatPHP(p.amount_due)}</Text>
                   <StatusBadge status={p.status} />
                 </View>
-              </View>
+            </TouchableOpacity>
             ))}
           </View>
         </ScrollView>
