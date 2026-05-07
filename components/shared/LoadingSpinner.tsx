@@ -14,7 +14,7 @@ export function LoadingSpinner({ fullScreen = false }: Props) {
         padding: fullScreen ? 0 : 32,
       }}
     >
-      <ActivityIndicator size="large" color="#1B3C34" />
+      <ActivityIndicator size="large" color="#2F4A7D" />
     </View>
   );
 }

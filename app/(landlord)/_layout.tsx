@@ -22,11 +22,11 @@ export default function LandlordLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#1B3C34',
+        tabBarActiveTintColor: '#2F4A7D',
         tabBarInactiveTintColor: '#9CA3AF',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
-          borderTopColor: '#F3F4F6',
+          borderTopColor: '#F1EFEC',
           borderTopWidth: 1,
           height: 84,
           paddingBottom: 24,
@@ -78,6 +78,10 @@ export default function LandlordLayout() {
       />
       <Tabs.Screen name="tenants"   options={{ href: null }} />
       <Tabs.Screen name="utilities" options={{ href: null }} />
+      <Tabs.Screen name="documents" options={{ href: null }} />
+      <Tabs.Screen name="house-rules" options={{ href: null }} />
+      <Tabs.Screen name="legal" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen
         name="more"
         options={{

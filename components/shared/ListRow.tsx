@@ -23,7 +23,7 @@ export function ListRow({ label, value, onPress, showDivider = true, valueColor 
         minHeight: 48,
         paddingVertical: 12,
         borderBottomWidth: showDivider ? 1 : 0,
-        borderBottomColor: '#E5E7EB',
+        borderBottomColor: '#E4E0DC',
       }}
     >
       <Text style={{ flex: 1, fontSize: 13, color: '#6B7280' }}>{label}</Text>

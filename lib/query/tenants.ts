@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { File as ExpoFile } from 'expo-file-system';
 import { supabase } from '../supabase';
 import { Tenant } from '../types';
+import { createStorageRef, resolveStorageUrl } from '../storage';
 
 export type TenantListFilter = 'active' | 'inactive';
 
@@ -47,6 +49,7 @@ export type TenantDocumentRow = {
   doc_type: string;
   file_url: string;
   file_name: string | null;
+  uploaded_by: 'landlord' | 'tenant';
   uploaded_at: string;
 };
 
@@ -75,6 +78,7 @@ export type VacantUnitForInvite = {
   id: string;
   unit_number: string;
   type: string | null;
+  monthly_rent: number;
   property: { id: string; name: string } | null;
   activeInvite?: { expires_at: string };
 };
@@ -84,15 +88,55 @@ function normalizeOne<T>(value: T | T[] | null | undefined): T | null {
   return value ?? null;
 }
 
+function unique(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean)));
+}
+
+async function withTimeout<T>(promise: Promise<T>, message: string, timeoutMs = 30000) {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_resolve, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
+async function loadFileArrayBuffer(uri: string) {
+  try {
+    const file = new ExpoFile(uri);
+    const arrayBuffer = await withTimeout(file.arrayBuffer(), 'The selected file took too long to read.');
+    if (arrayBuffer.byteLength > 0) return arrayBuffer;
+  } catch {
+    // Fall through for web blob/content URIs.
+  }
+
+  const response = await withTimeout(fetch(uri), 'The selected file took too long to open.');
+  const arrayBuffer = await withTimeout(response.arrayBuffer(), 'The selected file took too long to read.');
+  if (arrayBuffer.byteLength === 0) throw new Error('The selected file is empty.');
+  return arrayBuffer;
+}
+
 async function uploadDocumentFile(uri: string, path: string) {
-  const response = await fetch(uri);
-  const blob = await response.blob();
-  const { error } = await supabase.storage.from('documents').upload(path, blob, {
-    contentType: blob.type || 'image/jpeg',
-    upsert: true,
-  });
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (!user) throw new Error('You must be signed in to upload tenant documents.');
+
+  const arrayBuffer = await loadFileArrayBuffer(uri);
+  const scopedPath = `users/${user.id}/${path}`;
+  const { error } = await withTimeout(
+    supabase.storage.from('documents').upload(scopedPath, arrayBuffer, {
+      contentType: 'image/jpeg',
+      upsert: true,
+    }),
+    'Upload took too long. Check your connection and try again.'
+  );
   if (error) throw error;
-  return supabase.storage.from('documents').getPublicUrl(path).data.publicUrl;
+  return createStorageRef('documents', scopedPath);
 }
 
 export function useTenant(tenantId?: string) {
@@ -140,7 +184,7 @@ export function useVacantUnitsForInvite() {
       const [{ data: unitData, error: unitError }, { data: inviteData, error: inviteError }] = await Promise.all([
         supabase
           .from('unit')
-          .select('id, unit_number, type, property:property_id (id, name)')
+          .select('id, unit_number, type, monthly_rent, property:property_id (id, name)')
           .eq('status', 'vacant')
           .order('unit_number', { ascending: true }),
         supabase
@@ -150,17 +194,21 @@ export function useVacantUnitsForInvite() {
           .gt('expires_at', new Date().toISOString()),
       ]);
       if (unitError) throw unitError;
-      if (inviteError) throw inviteError;
 
       const activeByUnit = new Map<string, { expires_at: string }>();
-      for (const invite of inviteData ?? []) {
-        if (invite.unit_id) activeByUnit.set(invite.unit_id, { expires_at: invite.expires_at });
+      if (inviteError) {
+        console.warn('Could not load active tenant invites', inviteError);
+      } else {
+        for (const invite of inviteData ?? []) {
+          if (invite.unit_id) activeByUnit.set(invite.unit_id, { expires_at: invite.expires_at });
+        }
       }
 
       return ((unitData ?? []) as any[]).map(unit => ({
         id: unit.id,
         unit_number: unit.unit_number,
         type: unit.type,
+        monthly_rent: Number(unit.monthly_rent),
         property: normalizeOne(unit.property),
         activeInvite: activeByUnit.get(unit.id),
       }));
@@ -171,16 +219,26 @@ export function useVacantUnitsForInvite() {
 export function useCreateInvite() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (params: { name: string; phone: string; unitId: string }) => {
+    mutationFn: async (params: {
+      unitId: string;
+      startDate: string;
+      endDate: string;
+      monthlyRent: number;
+      securityDeposit: number;
+      advanceMonths: number;
+    }) => {
       const { data, error } = await supabase.rpc('create_landlord_invite', {
-        p_name: params.name,
-        p_phone: params.phone,
         p_unit_id: params.unitId,
+        p_start_date: params.startDate,
+        p_end_date: params.endDate,
+        p_monthly_rent: params.monthlyRent,
+        p_security_deposit: params.securityDeposit,
+        p_advance_months: params.advanceMonths,
       });
       if (error) throw error;
       return (Array.isArray(data) ? data[0] : data) as {
         invite_id: string;
-        tenant_id: string;
+        tenant_id: string | null;
         token: string;
         expires_at: string;
       };
@@ -207,9 +265,13 @@ export function useTenantDetail(tenantId?: string) {
       const rows = ((roster ?? []) as unknown as LandlordTenantRow[]).filter(row => row.tenant_id === tenantId);
       const row = rows.find(r => r.lease_status === 'active') ?? rows[0] ?? null;
       const leaseIds = rows.map(r => r.lease_id).filter(Boolean) as string[];
+      const unitIds: string[] = [];
 
       let activeLease: TenantLeaseSummary | null = null;
       let payments: TenantPaymentHistoryRow[] = [];
+      let maintenance: TenantMaintenanceHistoryRow[] = [];
+      let documents: TenantDocumentRow[] = [];
+      let utilityBillIds: string[] = [];
 
       if (leaseIds.length > 0) {
         const { data: leases, error: leaseError } = await supabase
@@ -223,6 +285,10 @@ export function useTenantDetail(tenantId?: string) {
           .order('created_at', { ascending: false });
         if (leaseError) throw leaseError;
         const leaseRows = (leases ?? []) as any[];
+        for (const lease of leaseRows) {
+          const unit = normalizeOne(lease.unit);
+          if (unit?.id) unitIds.push(unit.id);
+        }
         const selected = leaseRows.find(l => l.status === 'active') ?? leaseRows[0] ?? null;
         if (selected) {
           activeLease = {
@@ -231,41 +297,70 @@ export function useTenantDetail(tenantId?: string) {
           } as TenantLeaseSummary;
         }
 
-        if (activeLease) {
-          const { data: paymentData, error: paymentError } = await supabase
-            .from('rent_payment')
-            .select('id, period_month, period_year, amount_due, amount_paid, status, or_number, payment_date')
-            .eq('lease_id', activeLease.id)
-            .order('period_year', { ascending: false })
-            .order('period_month', { ascending: false });
-          if (paymentError) throw paymentError;
-          payments = (paymentData ?? []) as TenantPaymentHistoryRow[];
-        }
+        const { data: paymentData, error: paymentError } = await supabase
+          .from('rent_payment')
+          .select('id, period_month, period_year, amount_due, amount_paid, status, or_number, payment_date')
+          .in('lease_id', leaseIds)
+          .order('period_year', { ascending: false })
+          .order('period_month', { ascending: false });
+        if (paymentError) throw paymentError;
+        payments = (paymentData ?? []) as TenantPaymentHistoryRow[];
       }
 
-      const [{ data: maintenanceData, error: maintenanceError }, { data: documentData, error: documentError }] = await Promise.all([
+      const [{ data: maintenanceData, error: maintenanceError }, utilityResult] = await Promise.all([
         supabase
           .from('maintenance_request')
           .select('id, title, category, priority, status, created_at')
           .eq('reported_by', tenantId!)
           .order('created_at', { ascending: false }),
-        supabase
-          .from('document')
-          .select('id, entity_type, entity_id, doc_type, file_url, file_name, uploaded_at')
-          .eq('entity_type', 'tenant')
-          .eq('entity_id', tenantId!)
-          .order('uploaded_at', { ascending: false }),
+        unitIds.length > 0
+          ? supabase
+            .from('utility_bill')
+            .select('id')
+            .in('unit_id', unique(unitIds))
+          : Promise.resolve({ data: [], error: null }),
       ]);
       if (maintenanceError) throw maintenanceError;
-      if (documentError) throw documentError;
+      if (utilityResult.error) throw utilityResult.error;
+      maintenance = (maintenanceData ?? []) as TenantMaintenanceHistoryRow[];
+      utilityBillIds = ((utilityResult.data ?? []) as { id: string }[]).map(row => row.id);
+
+      const documentScopes: { entityType: string; entityIds: string[] }[] = [
+        { entityType: 'tenant', entityIds: [tenantId!] },
+        { entityType: 'lease', entityIds: leaseIds },
+        { entityType: 'rent_payment', entityIds: payments.map(payment => payment.id) },
+        { entityType: 'maintenance_request', entityIds: maintenance.map(request => request.id) },
+        { entityType: 'utility_bill', entityIds: utilityBillIds },
+      ];
+      const documentQueries = documentScopes
+        .map(scope => ({ entityType: scope.entityType, entityIds: unique(scope.entityIds) }))
+        .filter(scope => scope.entityIds.length > 0)
+        .map(scope => supabase
+          .from('document')
+          .select('id, entity_type, entity_id, doc_type, file_url, file_name, uploaded_by, uploaded_at')
+          .eq('entity_type', scope.entityType)
+          .in('entity_id', scope.entityIds));
+
+      const documentResults = await Promise.all(documentQueries);
+      for (const result of documentResults) {
+        if (result.error) throw result.error;
+        documents.push(...((result.data ?? []) as TenantDocumentRow[]));
+      }
+      documents = documents.sort(
+        (a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime()
+      );
+      documents = await Promise.all(documents.map(async doc => ({
+        ...doc,
+        file_url: await resolveStorageUrl(doc.file_url) ?? doc.file_url,
+      })));
 
       return {
         tenant,
         row,
         activeLease,
         payments,
-        maintenance: (maintenanceData ?? []) as TenantMaintenanceHistoryRow[],
-        documents: (documentData ?? []) as TenantDocumentRow[],
+        maintenance,
+        documents,
       };
     },
   });
@@ -333,6 +428,8 @@ export function useUploadTenantGovernmentId() {
     },
     onSuccess: (_data, { tenantId }) => {
       queryClient.invalidateQueries({ queryKey: ['landlord-tenant-detail', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['documents', 'tenant', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['document-center'] });
     },
   });
 }

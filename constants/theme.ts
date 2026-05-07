@@ -1,37 +1,44 @@
 import { Platform } from 'react-native';
 
 // ─── Brand Colors ─────────────────────────────────────────────────────────────
-// Deep forest green — the core brand color. Conveys trust and stability.
+// Steel Ink Blue — the core brand color. Conveys trust and stability.
 // Never swap this for a generic blue or use primary shades for status meanings.
 export const BrandColors = {
   primary: {
-    50:  '#E8F5F0',
-    100: '#C6E8DC',
-    200: '#8FD0B8',
-    300: '#57B894',
-    400: '#2E9A72',
-    500: '#1F7A58',
-    600: '#185E44',
-    700: '#144F3A',
-    800: '#103F2F',
-    900: '#1B3C34', // DEFAULT — headers, primary buttons, active nav
-    950: '#0D2420',
+    50:  '#EDF3FF',
+    100: '#D8E2F2',
+    200: '#B8C8E2',
+    300: '#8FA8D1',
+    400: '#637FB1',
+    500: '#2F4A7D',
+    600: '#283F6E',
+    700: '#233761',
+    800: '#1E3158',
+    900: '#1E3158', // DEFAULT — headers, primary buttons, active nav
+    950: '#14213F',
+  },
+
+  accent: {
+    50:  '#FFF0EA',
+    500: '#C34A1A',
+    600: '#A43A12',
+    hero: '#FFB14A',
   },
 
   // Fixed semantic colors — do not substitute with primary shades
   status: {
-    confirmed: { text: '#16A34A', bg: '#DCFCE7' },
-    pending:   { text: '#D97706', bg: '#FEF3C7' },
+    confirmed: { text: '#14804A', bg: '#EAF7EF' },
+    pending:   { text: '#D99A2B', bg: '#FFFBEB' },
     overdue:   { text: '#DC2626', bg: '#FEE2E2' },
-    active:    { text: '#16A34A', bg: '#DCFCE7' },
-    inactive:  { text: '#6B7280', bg: '#F3F4F6' },
+    active:    { text: '#14804A', bg: '#EAF7EF' },
+    inactive:  { text: '#6B7280', bg: '#F1EFEC' },
   },
 
   neutral: {
     0:   '#FFFFFF',
-    50:  '#F9FAFB', // page background
-    100: '#F3F4F6', // section backgrounds, dividers
-    200: '#E5E7EB', // borders, separators
+    50:  '#F7F6F3', // page background
+    100: '#F1EFEC', // section backgrounds, dividers
+    200: '#E4E0DC', // borders, separators
     300: '#D1D5DB',
     400: '#9CA3AF', // placeholder text, disabled
     500: '#6B7280', // secondary text, labels, icons
@@ -46,10 +53,14 @@ export const BrandColors = {
 // Use these in components — never raw hex values.
 export const Colors = {
   // Brand
-  brand:        BrandColors.primary[900],
-  brandLight:   BrandColors.primary[500],
+  brand:        BrandColors.primary[500],
+  brandDark:    BrandColors.primary[900],
+  brandLight:   BrandColors.primary[300],
   brandSurface: BrandColors.primary[50],
   brandTint:    BrandColors.primary[100],
+  accent:       BrandColors.accent[500],
+  accentHero:   BrandColors.accent.hero,
+  accentSurface: BrandColors.accent[50],
 
   // Surfaces
   bgPage:    BrandColors.neutral[50],
@@ -61,8 +72,8 @@ export const Colors = {
   textSecondary: BrandColors.neutral[500],
   textDisabled:  BrandColors.neutral[400],
   textInverse:   BrandColors.neutral[0],
-  textBrand:     BrandColors.primary[900],
-  textLink:      BrandColors.primary[500],
+  textBrand:     BrandColors.primary[500],
+  textLink:      BrandColors.accent[500],
   textDanger:    BrandColors.status.overdue.text,
 
   // Borders
@@ -71,11 +82,11 @@ export const Colors = {
 
   // Icons
   iconDefault: BrandColors.neutral[500],
-  iconBrand:   BrandColors.primary[900],
+  iconBrand:   BrandColors.primary[500],
   iconDanger:  BrandColors.status.overdue.text,
 
   // Tab bar
-  tabBarActive:     BrandColors.primary[900],
+  tabBarActive:     BrandColors.primary[500],
   tabBarInactive:   BrandColors.neutral[400],
   tabBarBackground: BrandColors.neutral[0],
 
@@ -83,10 +94,10 @@ export const Colors = {
   light: {
     text:           BrandColors.neutral[900],
     background:     BrandColors.neutral[50],
-    tint:           BrandColors.primary[900],
+    tint:           BrandColors.primary[500],
     icon:           BrandColors.neutral[500],
     tabIconDefault: BrandColors.neutral[400],
-    tabIconSelected: BrandColors.primary[900],
+    tabIconSelected: BrandColors.primary[500],
   },
   // Dark mode deferred to post-MVP — stub kept to avoid TS errors
   dark: {

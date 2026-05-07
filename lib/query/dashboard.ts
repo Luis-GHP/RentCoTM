@@ -1,10 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../supabase';
-
-function getCurrentPeriod() {
-  const now = new Date();
-  return { month: now.getMonth() + 1, year: now.getFullYear() };
-}
+import { currentPeriod } from '../domain/periods';
+import { paymentCollectionBuckets } from '../domain/payments';
 
 export function useLandlordInfo() {
   return useQuery({
@@ -21,7 +18,7 @@ export function useLandlordInfo() {
 }
 
 export function useMonthlySummary(month?: number, year?: number) {
-  const period = getCurrentPeriod();
+  const period = currentPeriod();
   const m = month ?? period.month;
   const y = year ?? period.year;
 
@@ -37,16 +34,10 @@ export function useMonthlySummary(month?: number, year?: number) {
 
       return (data ?? []).reduce(
         (acc, p) => {
-          if (p.status === 'paid') {
-            acc.collected += Number(p.amount_paid);
-          } else if (p.status === 'partial') {
-            acc.collected += Number(p.amount_paid);
-            acc.pending += Number(p.amount_due) - Number(p.amount_paid);
-          } else if (p.status === 'pending') {
-            acc.pending += Number(p.amount_due);
-          } else if (p.status === 'overdue') {
-            acc.overdue += Number(p.amount_due);
-          }
+          const buckets = paymentCollectionBuckets(p);
+          acc.collected += buckets.collected;
+          acc.pending += buckets.pending;
+          acc.overdue += buckets.overdue;
           return acc;
         },
         { collected: 0, pending: 0, overdue: 0 }

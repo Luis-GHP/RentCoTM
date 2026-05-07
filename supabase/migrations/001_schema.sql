@@ -325,7 +325,7 @@ create table maintenance_request (
   description  text,
   category     text not null check (category in (
                  'plumbing', 'electrical', 'structural',
-                 'appliance', 'pest', 'other'
+                 'appliance', 'pest', 'cleaning', 'internet', 'other'
                )),
   priority     text not null default 'medium' check (priority in (
                  'low', 'medium', 'high', 'emergency'

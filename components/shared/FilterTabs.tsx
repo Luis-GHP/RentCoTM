@@ -28,7 +28,7 @@ export function FilterTabs<T extends string>({ tabs, active, onChange }: Props<T
               paddingHorizontal: 16,
               paddingVertical: 6,
               borderRadius: 20,
-              backgroundColor: isActive ? '#1B3C34' : '#F3F4F6',
+              backgroundColor: isActive ? '#2F4A7D' : '#F1EFEC',
             }}
           >
             <Text

@@ -10,31 +10,37 @@ module.exports = {
       colors: {
         // ── Brand ──────────────────────────────────────────────────────────
         primary: {
-          DEFAULT: '#1B3C34',
-          50:  '#E8F5F0',
-          100: '#C6E8DC',
-          200: '#8FD0B8',
-          300: '#57B894',
-          400: '#2E9A72',
-          500: '#1F7A58',
-          600: '#185E44',
-          700: '#144F3A',
-          800: '#103F2F',
-          900: '#1B3C34',
-          950: '#0D2420',
+          DEFAULT: '#2F4A7D',
+          50:  '#EDF3FF',
+          100: '#D8E2F2',
+          200: '#B8C8E2',
+          300: '#8FA8D1',
+          400: '#637FB1',
+          500: '#2F4A7D',
+          600: '#283F6E',
+          700: '#233761',
+          800: '#1E3158',
+          900: '#1E3158',
+          950: '#14213F',
+        },
+
+        accent: {
+          DEFAULT: '#C34A1A',
+          hero: '#FFB14A',
+          bg: '#FFF0EA',
         },
 
         // ── Surfaces ───────────────────────────────────────────────────────
-        page:    '#F9FAFB',
+        page:    '#F7F6F3',
         card:    '#FFFFFF',
-        section: '#F3F4F6',
+        section: '#F1EFEC',
 
         // ── Status — always use text-* with matching bg-* ──────────────────
-        confirmed: { DEFAULT: '#16A34A', bg: '#DCFCE7' },
-        pending:   { DEFAULT: '#D97706', bg: '#FEF3C7' },
+        confirmed: { DEFAULT: '#14804A', bg: '#EAF7EF' },
+        pending:   { DEFAULT: '#D99A2B', bg: '#FFFBEB' },
         overdue:   { DEFAULT: '#DC2626', bg: '#FEE2E2' },
-        active:    { DEFAULT: '#16A34A', bg: '#DCFCE7' },
-        inactive:  { DEFAULT: '#6B7280', bg: '#F3F4F6' },
+        active:    { DEFAULT: '#14804A', bg: '#EAF7EF' },
+        inactive:  { DEFAULT: '#6B7280', bg: '#F1EFEC' },
       },
 
       fontFamily: {

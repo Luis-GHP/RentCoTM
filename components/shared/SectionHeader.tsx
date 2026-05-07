@@ -11,7 +11,7 @@ export function SectionHeader({ title, onViewAll }: Props) {
       <Text style={{ fontSize: 17, fontWeight: '600', color: '#111827' }}>{title}</Text>
       {onViewAll && (
         <TouchableOpacity onPress={onViewAll}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: '#1F7A58' }}>View all</Text>
+          <Text style={{ fontSize: 13, fontWeight: '700', color: '#C34A1A' }}>View all</Text>
         </TouchableOpacity>
       )}
     </View>

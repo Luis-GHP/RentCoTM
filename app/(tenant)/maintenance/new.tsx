@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
@@ -8,7 +8,7 @@ import { AlertBox } from '../../../components/shared/AlertBox';
 import { Button } from '../../../components/shared/Button';
 import { useCreateTenantMaintenanceRequest } from '../../../lib/query/tenant-home';
 
-const PRIMARY = '#1B3C34';
+const PRIMARY = '#2F4A7D';
 
 type Photo = { uri: string; fileName: string; contentType?: string };
 
@@ -25,7 +25,7 @@ const CATEGORIES = [
 
 const PRIORITIES = [
   { key: 'low', label: 'Low', color: '#6B7280' },
-  { key: 'medium', label: 'Medium', color: '#D97706' },
+  { key: 'medium', label: 'Medium', color: '#D99A2B' },
   { key: 'high', label: 'High', color: '#EA580C' },
   { key: 'emergency', label: 'Emergency', color: '#DC2626' },
 ] as const;
@@ -39,6 +39,7 @@ export default function NewTenantMaintenanceRequestScreen() {
   const [priority, setPriority] = useState<(typeof PRIORITIES)[number]['key']>('medium');
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [error, setError] = useState('');
+  const [submitted, setSubmitted] = useState<{ id: string; failedPhotoCount: number } | null>(null);
 
   async function pickPhoto() {
     if (photos.length >= 3) return;
@@ -64,24 +65,23 @@ export default function NewTenantMaintenanceRequestScreen() {
     if (!description.trim()) { setError('Description is required.'); return; }
 
     try {
-      const id = await createRequest.mutateAsync({
+      const result = await createRequest.mutateAsync({
         title,
         description,
         category,
         priority,
         photos,
       });
-      Alert.alert('Request Submitted', 'Your landlord can now review this request.', [
-        { text: 'OK', onPress: () => router.replace(`/(tenant)/maintenance/${id}` as any) },
-      ]);
-    } catch {
-      setError('Could not submit this request right now.');
+      setSubmitted(result);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '';
+      setError(message ? `Could not submit this request: ${message}` : 'Could not submit this request right now.');
     }
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
-      <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6', paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', alignItems: 'center' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+      <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1EFEC', paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', alignItems: 'center' }}>
         <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={{ marginRight: 12 }}>
           <Ionicons name="chevron-back" size={24} color="#111827" />
         </TouchableOpacity>
@@ -103,7 +103,7 @@ export default function NewTenantMaintenanceRequestScreen() {
                 key={item.key}
                 onPress={() => setCategory(item.key)}
                 activeOpacity={0.75}
-                style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 9, borderRadius: 20, borderWidth: 1, borderColor: selected ? PRIMARY : '#E5E7EB', backgroundColor: selected ? PRIMARY : '#fff' }}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 9, borderRadius: 20, borderWidth: 1, borderColor: selected ? PRIMARY : '#E4E0DC', backgroundColor: selected ? PRIMARY : '#fff' }}
               >
                 <Ionicons name={item.icon} size={15} color={selected ? '#fff' : '#6B7280'} style={{ marginRight: 5 }} />
                 <Text style={{ fontSize: 13, fontWeight: '700', color: selected ? '#fff' : '#374151' }}>{item.label}</Text>
@@ -121,7 +121,7 @@ export default function NewTenantMaintenanceRequestScreen() {
                 key={item.key}
                 onPress={() => setPriority(item.key)}
                 activeOpacity={0.75}
-                style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1, borderColor: selected ? item.color : '#E5E7EB', backgroundColor: selected ? `${item.color}14` : '#fff' }}
+                style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1, borderColor: selected ? item.color : '#E4E0DC', backgroundColor: selected ? `${item.color}14` : '#fff' }}
               >
                 <Text style={{ fontSize: 13, fontWeight: '800', color: selected ? item.color : '#374151' }}>{item.label}</Text>
               </TouchableOpacity>
@@ -130,11 +130,11 @@ export default function NewTenantMaintenanceRequestScreen() {
         </View>
 
         <Text style={{ fontSize: 13, fontWeight: '700', color: '#374151', marginBottom: 8 }}>Photos</Text>
-        <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F3F4F6', padding: 14, marginBottom: 18 }}>
+        <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F1EFEC', padding: 14, marginBottom: 18 }}>
           {photos.length === 0 ? (
             <Text style={{ fontSize: 14, color: '#9CA3AF', marginBottom: 12 }}>No photos selected</Text>
           ) : photos.map((photo, index) => (
-            <View key={`${photo.uri}-${index}`} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: index < photos.length - 1 ? 1 : 0, borderBottomColor: '#F3F4F6' }}>
+            <View key={`${photo.uri}-${index}`} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: index < photos.length - 1 ? 1 : 0, borderBottomColor: '#F1EFEC' }}>
               <Ionicons name="image-outline" size={18} color={PRIMARY} style={{ marginRight: 10 }} />
               <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: '#111827' }} numberOfLines={1}>{photo.fileName}</Text>
               <TouchableOpacity onPress={() => setPhotos(current => current.filter((_, i) => i !== index))} activeOpacity={0.75}>
@@ -147,6 +147,34 @@ export default function NewTenantMaintenanceRequestScreen() {
 
         <Button label="Submit Request" loading={createRequest.isPending} onPress={submit} />
       </ScrollView>
+
+      <Modal visible={!!submitted} transparent animationType="fade" onRequestClose={() => router.replace('/(tenant)/maintenance')}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(17,24,39,0.35)', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <View style={{ width: '100%', backgroundColor: '#fff', borderRadius: 18, padding: 20 }}>
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#EDF3FF', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+              <Ionicons name="checkmark-circle" size={28} color={PRIMARY} />
+            </View>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827' }}>Request submitted</Text>
+            <Text style={{ fontSize: 14, color: '#6B7280', marginTop: 6, marginBottom: 16 }}>
+              Your landlord can now review this maintenance request.
+            </Text>
+            {submitted?.failedPhotoCount ? (
+              <View style={{ backgroundColor: '#FFFBEB', borderWidth: 1, borderColor: '#FDE68A', borderRadius: 12, padding: 12, marginBottom: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                  <Ionicons name="warning-outline" size={18} color="#B45309" style={{ marginRight: 8, marginTop: 1 }} />
+                  <Text style={{ flex: 1, fontSize: 13, color: '#92400E', lineHeight: 19 }}>
+                    {submitted.failedPhotoCount === photos.length
+                      ? `The request was saved, but ${photos.length === 1 ? 'the photo could not upload' : 'the photos could not upload'}. Please tell your landlord if the attachment is important.`
+                      : `${submitted.failedPhotoCount} ${submitted.failedPhotoCount === 1 ? 'photo' : 'photos'} could not upload. The request was still saved.`}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+            <Button label="Back to Maintenance" onPress={() => router.replace('/(tenant)/maintenance')} style={{ marginBottom: 10 }} />
+            <Button label="View Request" variant="secondary" onPress={() => submitted && router.replace(`/(tenant)/maintenance/${submitted.id}` as any)} />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -178,7 +206,7 @@ function Field({
           backgroundColor: '#fff',
           borderRadius: 10,
           borderWidth: 1,
-          borderColor: '#E5E7EB',
+          borderColor: '#E4E0DC',
           minHeight: multiline ? 116 : 52,
           paddingHorizontal: 16,
           paddingTop: multiline ? 14 : 0,

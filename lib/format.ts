@@ -1,3 +1,5 @@
+import { monthName } from './domain/periods';
+
 export function formatPHP(amount: number | null | undefined): string {
   if (amount == null) return '₱0.00';
   return '₱' + Number(amount).toLocaleString('en-PH', {
@@ -16,8 +18,7 @@ export function formatDate(dateStr: string | null | undefined): string {
 }
 
 export function getMonthName(month: number): string {
-  return ['January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'][month - 1];
+  return monthName(month);
 }
 
 export function getGreeting(): string {
@@ -33,8 +34,8 @@ export function getInitials(name: string): string {
 
 export function avatarColor(name: string): string {
   const colors = [
-    '#3B82F6', '#8B5CF6', '#10B981', '#F59E0B',
-    '#EC4899', '#14B8A6', '#6366F1', '#EF4444',
+    '#2F4A7D', '#1E3158', '#637FB1', '#8FA8D1',
+    '#C34A1A', '#A43A12', '#FFB14A', '#D99A2B',
   ];
   const hash = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
   return colors[hash % colors.length];

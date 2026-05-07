@@ -6,23 +6,25 @@ import { useRouter } from 'expo-router';
 import { EmptyState } from '../../../components/shared/EmptyState';
 import { FilterTabs } from '../../../components/shared/FilterTabs';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
+import { MainHeader } from '../../../components/shared/MainHeader';
+import { PageBackground } from '../../../components/shared/PageBackground';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
 import { useAllUtilityBills, UtilityBillRow, UtilityFilter } from '../../../lib/query/utilities';
 import { formatPHP, getMonthName } from '../../../lib/format';
-
-const PRIMARY = '#1B3C34';
 
 const FILTERS = [
   { key: 'all' as UtilityFilter, label: 'All' },
   { key: 'pending' as UtilityFilter, label: 'Pending' },
   { key: 'confirmed' as UtilityFilter, label: 'Confirmed' },
+  { key: 'unpaid' as UtilityFilter, label: 'Unpaid' },
+  { key: 'paid' as UtilityFilter, label: 'Paid' },
 ];
 
 const UTILITY_ICON: Record<string, { icon: keyof typeof Ionicons.glyphMap; color: string; bg: string }> = {
-  electric: { icon: 'flash-outline', color: '#D97706', bg: '#FFFBEB' },
-  water: { icon: 'water-outline', color: '#2563EB', bg: '#EFF6FF' },
-  internet: { icon: 'wifi-outline', color: '#7C3AED', bg: '#F5F3FF' },
-  other: { icon: 'receipt-outline', color: '#6B7280', bg: '#F3F4F6' },
+  electric: { icon: 'flash-outline', color: '#D99A2B', bg: '#FFFBEB' },
+  water: { icon: 'water-outline', color: '#2F4A7D', bg: '#EDF3FF' },
+  internet: { icon: 'wifi-outline', color: '#2F4A7D', bg: '#EDF3FF' },
+  other: { icon: 'receipt-outline', color: '#6B7280', bg: '#F1EFEC' },
 };
 
 function groupByUnit(bills: UtilityBillRow[]) {
@@ -45,14 +47,21 @@ export default function UtilitiesScreen() {
   if (isLoading) return <LoadingSpinner fullScreen />;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
-      <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
-        <View style={{ backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 4, flexDirection: 'row', alignItems: 'center' }}>
-          <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: '#111827' }}>Utilities</Text>
-          <TouchableOpacity onPress={() => router.push('/(landlord)/utilities/upload')} activeOpacity={0.7}>
-            <Ionicons name="cloud-upload-outline" size={24} color={PRIMARY} />
+    <SafeAreaView edges={['left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+      <PageBackground />
+      <MainHeader
+        title="Utilities"
+        right={(
+          <TouchableOpacity
+            onPress={() => router.push('/(landlord)/utilities/upload')}
+            activeOpacity={0.7}
+            style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Ionicons name="cloud-upload-outline" size={22} color="#fff" />
           </TouchableOpacity>
-        </View>
+        )}
+      />
+      <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1EFEC' }}>
         <FilterTabs tabs={FILTERS} active={filter} onChange={setFilter} />
       </View>
 
@@ -69,7 +78,7 @@ export default function UtilitiesScreen() {
           {groups.map(group => (
             <View key={group.label} style={{ marginBottom: 16 }}>
               <Text style={{ fontSize: 13, fontWeight: '800', color: '#374151', marginBottom: 8 }}>{group.label}</Text>
-              <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F3F4F6', overflow: 'hidden' }}>
+              <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F1EFEC', overflow: 'hidden' }}>
                 {group.bills.map((bill, index) => {
                   const icon = UTILITY_ICON[bill.utility_type] ?? UTILITY_ICON.other;
                   return (
@@ -77,7 +86,7 @@ export default function UtilitiesScreen() {
                       key={bill.id}
                       onPress={() => router.push(`/(landlord)/utilities/${bill.id}`)}
                       activeOpacity={0.75}
-                      style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: index < group.bills.length - 1 ? 1 : 0, borderBottomColor: '#F3F4F6' }}
+                      style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: index < group.bills.length - 1 ? 1 : 0, borderBottomColor: '#F1EFEC' }}
                     >
                       <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: icon.bg, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
                         <Ionicons name={icon.icon} size={19} color={icon.color} />
@@ -90,7 +99,7 @@ export default function UtilitiesScreen() {
                       </View>
                       <View style={{ alignItems: 'flex-end', gap: 4 }}>
                         <Text style={{ fontSize: 14, fontWeight: '800', color: '#111827' }}>{formatPHP(bill.amount)}</Text>
-                        <StatusBadge status={bill.confirmed_at ? 'confirmed' : 'pending'} />
+                        <StatusBadge status={bill.confirmed_at ? bill.status : 'pending'} />
                       </View>
                     </TouchableOpacity>
                   );
