@@ -16,7 +16,7 @@ export function FormInput({ label, error, ...props }: Props) {
         style={{
           height: 52,
           borderWidth: error ? 1.5 : 1,
-          borderColor: error ? '#DC2626' : '#E5E7EB',
+          borderColor: error ? '#DC2626' : '#E4E0DC',
           borderRadius: 10,
           paddingHorizontal: 16,
           fontSize: 15,

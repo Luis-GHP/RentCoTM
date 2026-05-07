@@ -3,9 +3,50 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { MainHeader } from '../../../components/shared/MainHeader';
+import { PageBackground } from '../../../components/shared/PageBackground';
 import { useProperties, PropertyWithUnits } from '../../../lib/query/properties';
 
-const PRIMARY = '#1B3C34';
+const PRIMARY = '#2F4A7D';
+const ACCENT_HERO = '#FFB14A';
+
+function HeroMetric({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <View style={{ flex: 1, minWidth: 0 }}>
+      <Text style={{ fontSize: 10, fontWeight: '900', color: 'rgba(255,255,255,0.66)', letterSpacing: 0, textTransform: 'uppercase' }} numberOfLines={1}>{label}</Text>
+      <Text style={{ fontSize: 20, fontWeight: '900', color: accent ? ACCENT_HERO : '#fff', marginTop: 6 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{value}</Text>
+    </View>
+  );
+}
+
+function PropertiesHeaderPanel({ properties }: { properties: PropertyWithUnits[] }) {
+  const totalProperties = properties.length;
+  const units = properties.flatMap(p => p.unit ?? []);
+  const totalUnits = units.length;
+  const occupied = units.filter(u => u.status === 'occupied').length;
+  const vacant = units.filter(u => u.status === 'vacant').length;
+  const occupancyPct = totalUnits > 0 ? Math.round((occupied / totalUnits) * 100) : 0;
+
+  return (
+    <View style={{ borderRadius: 18, backgroundColor: 'rgba(30,49,88,0.66)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)', padding: 15 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
+        <View style={{ width: 34, height: 34, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+          <Ionicons name="business-outline" size={18} color="#fff" />
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={{ fontSize: 13, fontWeight: '900', color: '#fff' }}>Portfolio Snapshot</Text>
+          <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.68)', marginTop: 2 }} numberOfLines={1}>Occupancy across all active properties</Text>
+        </View>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 12 }}>
+        <HeroMetric label="Properties" value={String(totalProperties)} />
+        <HeroMetric label="Units" value={String(totalUnits)} />
+        <HeroMetric label="Vacant" value={String(vacant)} />
+        <HeroMetric label="Occupancy" value={`${occupancyPct}%`} accent />
+      </View>
+    </View>
+  );
+}
 
 function PropertyCard({ property, onPress }: { property: PropertyWithUnits; onPress: () => void }) {
   const units = property.unit ?? [];
@@ -19,7 +60,7 @@ function PropertyCard({ property, onPress }: { property: PropertyWithUnits; onPr
     <TouchableOpacity
       activeOpacity={0.75}
       onPress={onPress}
-      style={{ backgroundColor: '#fff', borderRadius: 16, marginBottom: 14, borderWidth: 1, borderColor: '#F3F4F6', overflow: 'hidden' }}
+      style={{ backgroundColor: '#fff', borderRadius: 16, marginBottom: 14, borderWidth: 1, borderColor: '#F1EFEC', overflow: 'hidden' }}
     >
       <View style={{ height: 6, backgroundColor: PRIMARY }} />
       <View style={{ padding: 16 }}>
@@ -32,7 +73,7 @@ function PropertyCard({ property, onPress }: { property: PropertyWithUnits; onPr
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 12 }}>
           <Pill icon="grid-outline" value={`${total} units`} />
-          <Pill icon="home-outline" value={`${occupied} occupied`} color="#15803D" />
+          <Pill icon="home-outline" value={`${occupied} occupied`} color="#14804A" />
           {vacant > 0 && <Pill icon="key-outline" value={`${vacant} vacant`} color="#B45309" />}
           {underMaintenance > 0 && <Pill icon="construct-outline" value={`${underMaintenance} maintenance`} color="#6B7280" />}
           <View style={{ flex: 1, alignItems: 'flex-end' }}>
@@ -57,7 +98,7 @@ function OccupancyBar({ pct }: { pct: number }) {
   return (
     <View style={{ alignItems: 'flex-end' }}>
       <Text style={{ fontSize: 11, color: '#6B7280', marginBottom: 3 }}>{pct}% occupied</Text>
-      <View style={{ width: 80, height: 4, backgroundColor: '#E5E7EB', borderRadius: 2 }}>
+      <View style={{ width: 80, height: 4, backgroundColor: '#E4E0DC', borderRadius: 2 }}>
         <View style={{ width: `${pct}%`, height: 4, backgroundColor: PRIMARY, borderRadius: 2 }} />
       </View>
     </View>
@@ -75,20 +116,26 @@ export default function PropertiesScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
-        <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: '#111827' }}>Properties</Text>
-        <TouchableOpacity
-          onPress={() => router.push('/(landlord)/properties/add')}
-          style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center' }}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="add" size={22} color="#fff" />
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView edges={['left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+      <PageBackground />
+      <MainHeader
+        title="Properties"
+        subtitle="Portfolio and occupancy"
+        right={(
+          <TouchableOpacity
+            onPress={() => router.push('/(landlord)/properties/add')}
+            style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="add" size={22} color="#fff" />
+          </TouchableOpacity>
+        )}
+      >
+        <PropertiesHeaderPanel properties={properties ?? []} />
+      </MainHeader>
 
       <View style={{ paddingHorizontal: 20, paddingTop: 14, paddingBottom: 6, backgroundColor: '#fff' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 10, paddingHorizontal: 12, height: 42 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1EFEC', borderRadius: 10, paddingHorizontal: 12, height: 42 }}>
           <Ionicons name="search-outline" size={18} color="#9CA3AF" />
           <TextInput
             value={search}

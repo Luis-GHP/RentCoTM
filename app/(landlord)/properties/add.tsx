@@ -11,7 +11,7 @@ import {
   useCreateProperty,
 } from '../../../lib/query/properties';
 
-const PRIMARY = '#1B3C34';
+const PRIMARY = '#2F4A7D';
 
 const PROPERTY_TYPES: { key: PropertyType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { key: 'apartment', label: 'Apartment', icon: 'business-outline' },
@@ -73,8 +73,8 @@ export default function AddPropertyScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
-      <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6', paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', alignItems: 'center' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+      <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1EFEC', paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', alignItems: 'center' }}>
         <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={{ marginRight: 12 }}>
           <Ionicons name="chevron-back" size={24} color="#111827" />
         </TouchableOpacity>
@@ -88,7 +88,7 @@ export default function AddPropertyScreen() {
         <Field label="Address" value={address} onChange={setAddress} placeholder="Street, city, province" multiline />
 
         <Text style={{ fontSize: 13, fontWeight: '700', color: '#374151', marginBottom: 8 }}>Property Type</Text>
-        <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F3F4F6', overflow: 'hidden', marginBottom: 16 }}>
+        <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F1EFEC', overflow: 'hidden', marginBottom: 16 }}>
           {PROPERTY_TYPES.map((type, index) => {
             const selected = propertyType === type.key;
             return (
@@ -102,7 +102,7 @@ export default function AddPropertyScreen() {
                   padding: 14,
                   backgroundColor: selected ? `${PRIMARY}0D` : '#fff',
                   borderBottomWidth: index < PROPERTY_TYPES.length - 1 ? 1 : 0,
-                  borderBottomColor: '#F3F4F6',
+                  borderBottomColor: '#F1EFEC',
                 }}
               >
                 <Ionicons name={type.icon} size={20} color={selected ? PRIMARY : '#9CA3AF'} style={{ marginRight: 12 }} />
@@ -125,7 +125,7 @@ export default function AddPropertyScreen() {
                   if (provider.key === 'manual') setRate('');
                 }}
                 activeOpacity={0.75}
-                style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, backgroundColor: selected ? PRIMARY : '#fff', borderWidth: 1, borderColor: selected ? PRIMARY : '#E5E7EB' }}
+                style={{ paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, backgroundColor: selected ? PRIMARY : '#fff', borderWidth: 1, borderColor: selected ? PRIMARY : '#E4E0DC' }}
               >
                 <Text style={{ fontSize: 13, fontWeight: '700', color: selected ? '#fff' : '#374151' }}>{provider.label}</Text>
               </TouchableOpacity>
@@ -179,7 +179,7 @@ function Field({
           backgroundColor: '#fff',
           borderRadius: 10,
           borderWidth: 1,
-          borderColor: '#E5E7EB',
+          borderColor: '#E4E0DC',
           minHeight: multiline ? 96 : 52,
           paddingHorizontal: 16,
           paddingTop: multiline ? 14 : 0,

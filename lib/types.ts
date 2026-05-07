@@ -6,6 +6,7 @@ export type UserProfile = {
   landlord_id: string | null;
   tenant_id: string | null;
   is_active: boolean;
+  push_token: string | null;
   created_at: string;
 };
 
@@ -122,7 +123,7 @@ export type UtilityBill = {
   kwh_consumed: number | null;
   rate_per_kwh: number | null;
   amount: number;
-  status: 'unpaid' | 'paid';
+  status: 'unpaid' | 'payment_submitted' | 'paid';
   bill_pdf_url: string | null;
   parsed_by: 'llm' | 'manual' | null;
   rate_source: 'llm_parsed' | 'manual' | null;

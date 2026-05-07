@@ -32,7 +32,37 @@ serve(async (req) => {
 
     if (error) return json({ error: error.message }, 500);
 
-    return json(data);
+    if (!data?.is_valid) return json(data);
+
+    const { data: tenant } = data.tenant_id
+      ? await supabase
+        .from('tenant')
+        .select('name')
+        .eq('id', data.tenant_id)
+        .single()
+      : { data: null };
+
+    const { data: invite } = await supabase
+      .from('tenant_invite')
+      .select(`
+        unit:unit_id (
+          unit_number,
+          property:property_id (name, address)
+        )
+      `)
+      .eq('token', token)
+      .single();
+
+    const unit = Array.isArray(invite?.unit) ? invite?.unit[0] : invite?.unit;
+    const property = Array.isArray(unit?.property) ? unit?.property[0] : unit?.property;
+
+    return json({
+      ...data,
+      tenant_name: tenant?.name ?? null,
+      unit_number: unit?.unit_number ?? null,
+      property_name: property?.name ?? null,
+      property_address: property?.address ?? null,
+    });
   } catch (err) {
     return json({ error: String(err) }, 500);
   }

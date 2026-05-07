@@ -1,9 +1,10 @@
-import { View, Text, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AlertBox } from '../../../../components/shared/AlertBox';
+import { AppModal } from '../../../../components/shared/AppModal';
 import { Button } from '../../../../components/shared/Button';
 import { Card } from '../../../../components/shared/Card';
 import { LoadingSpinner } from '../../../../components/shared/LoadingSpinner';
@@ -24,6 +25,8 @@ export default function RentIncreaseScreen() {
   const [effectiveDate, setEffectiveDate] = useState(firstOfNextMonth());
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
+  const [warningOpen, setWarningOpen] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
 
   const lease = data?.activeLease;
   const currentRent = Number(lease?.monthly_rent ?? 0);
@@ -40,42 +43,36 @@ export default function RentIncreaseScreen() {
     if (!parsedRent || parsedRent <= 0) { setError('Enter a valid new rent amount.'); return; }
     if (!effectiveDate.match(/^\d{4}-\d{2}-\d{2}$/)) { setError('Use date format YYYY-MM-DD.'); return; }
 
-    const run = async () => {
-      try {
-        await recordRentIncrease.mutateAsync({
-          leaseId: lease.id,
-          newRent: parsedRent,
-          effectiveDate,
-          reason,
-        });
-        Alert.alert('Rent Increase Recorded', 'The lease rent was updated and the increase history was saved.', [
-          { text: 'OK', onPress: () => router.back() },
-        ]);
-      } catch {
-        setError('Could not record the rent increase.');
-      }
-    };
-
     if (exceedsCap) {
-      Alert.alert(
-        'RA 9653 Warning',
-        'This exceeds the 7% annual cap under RA 9653. You may still proceed but should consult DHSUD.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Proceed', onPress: run },
-        ]
-      );
+      setWarningOpen(true);
       return;
     }
 
-    run();
+    await recordIncrease();
+  }
+
+  async function recordIncrease() {
+    if (!lease) return;
+    setWarningOpen(false);
+    setError('');
+    try {
+      await recordRentIncrease.mutateAsync({
+        leaseId: lease.id,
+        newRent: parsedRent,
+        effectiveDate,
+        reason,
+      });
+      setSuccessOpen(true);
+    } catch {
+      setError('Could not record the rent increase.');
+    }
   }
 
   if (isLoading) return <LoadingSpinner fullScreen />;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
-      <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6', paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', alignItems: 'center' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+      <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1EFEC', paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', alignItems: 'center' }}>
         <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={{ marginRight: 12 }}>
           <Ionicons name="chevron-back" size={24} color="#111827" />
         </TouchableOpacity>
@@ -112,11 +109,11 @@ export default function RentIncreaseScreen() {
               placeholder="0.00"
               placeholderTextColor="#9CA3AF"
               keyboardType="decimal-pad"
-              style={{ backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', height: 52, paddingHorizontal: 16, fontSize: 16, color: '#111827', marginBottom: 10 }}
+              style={{ backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#E4E0DC', height: 52, paddingHorizontal: 16, fontSize: 16, color: '#111827', marginBottom: 10 }}
             />
 
-            <View style={{ backgroundColor: parsedRent ? (increasePct <= 7 ? '#F0FDF4' : '#FFFBEB') : '#F9FAFB', borderRadius: 10, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: parsedRent ? (increasePct <= 7 ? '#BBF7D0' : '#FDE68A') : '#E5E7EB' }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: parsedRent ? (increasePct <= 7 ? '#15803D' : '#B45309') : '#6B7280' }}>
+            <View style={{ backgroundColor: parsedRent ? (increasePct <= 7 ? '#EAF7EF' : '#FFFBEB') : '#F7F6F3', borderRadius: 10, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: parsedRent ? (increasePct <= 7 ? '#BDE7CB' : '#FDE68A') : '#E4E0DC' }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: parsedRent ? (increasePct <= 7 ? '#14804A' : '#B45309') : '#6B7280' }}>
                 {parsedRent ? `${increasePct.toFixed(1)}% increase` : 'Enter the new rent to preview the increase'}
               </Text>
             </View>
@@ -127,7 +124,7 @@ export default function RentIncreaseScreen() {
               onChangeText={setEffectiveDate}
               placeholder="YYYY-MM-DD"
               placeholderTextColor="#9CA3AF"
-              style={{ backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', height: 52, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 16 }}
+              style={{ backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#E4E0DC', height: 52, paddingHorizontal: 16, fontSize: 15, color: '#111827', marginBottom: 16 }}
             />
 
             <Text style={{ fontSize: 13, fontWeight: '700', color: '#374151', marginBottom: 6 }}>Reason</Text>
@@ -137,13 +134,37 @@ export default function RentIncreaseScreen() {
               placeholder="Optional note"
               placeholderTextColor="#9CA3AF"
               multiline
-              style={{ backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', minHeight: 90, paddingHorizontal: 16, paddingVertical: 12, fontSize: 15, color: '#111827', marginBottom: 24, textAlignVertical: 'top' }}
+              style={{ backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#E4E0DC', minHeight: 90, paddingHorizontal: 16, paddingVertical: 12, fontSize: 15, color: '#111827', marginBottom: 24, textAlignVertical: 'top' }}
             />
 
             <Button label="Record Rent Increase" loading={recordRentIncrease.isPending} onPress={submit} />
           </>
         )}
       </ScrollView>
+
+      <AppModal
+        visible={warningOpen}
+        tone="warning"
+        title="RA 9653 Warning"
+        message="This exceeds the 7% annual cap under RA 9653. You may still proceed but should consult DHSUD."
+        cancelLabel="Cancel"
+        confirmLabel="Proceed"
+        loading={recordRentIncrease.isPending}
+        onCancel={() => !recordRentIncrease.isPending && setWarningOpen(false)}
+        onConfirm={recordIncrease}
+      />
+
+      <AppModal
+        visible={successOpen}
+        tone="success"
+        title="Rent Increase Recorded"
+        message="The lease rent was updated and the increase history was saved."
+        confirmLabel="Done"
+        onConfirm={() => {
+          setSuccessOpen(false);
+          router.back();
+        }}
+      />
     </SafeAreaView>
   );
 }

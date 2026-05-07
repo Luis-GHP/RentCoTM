@@ -4,7 +4,7 @@
     "slug": "rentco",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo-icon-dark.png",
+    "icon": "./assets/images/rentco-app-icon.png",
     "scheme": "rentco",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -15,29 +15,29 @@
     "android": {
       "package": "com.rentco.app",
       "adaptiveIcon": {
-        "backgroundColor": "#1B3C34",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#2F4A7D",
+        "foregroundImage": "./assets/images/rentco-adaptive-icon-foreground.png",
+        "monochromeImage": "./assets/images/rentco-adaptive-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/rentco-favicon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/logo-icon-dark.png",
-          "imageWidth": 200,
+          "image": "./assets/images/rentco-splash-logo.png",
+          "imageWidth": 240,
           "resizeMode": "contain",
-          "backgroundColor": "#1B3C34"
+          "backgroundColor": "#2F4A7D"
         }
       ],
+      "expo-notifications",
       "expo-secure-store"
     ],
     "experiments": {

@@ -1,10 +1,11 @@
-import { View, Text, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { AlertBox } from '../../../components/shared/AlertBox';
+import { AppModal } from '../../../components/shared/AppModal';
 import { Button } from '../../../components/shared/Button';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
 import {
@@ -14,10 +15,18 @@ import {
   useUtilityUnitOptions,
 } from '../../../lib/query/utilities';
 
-const PRIMARY = '#1B3C34';
+const PRIMARY = '#2F4A7D';
 const UTILITY_TYPES = ['electric', 'water', 'internet', 'other'] as const;
+const ELECTRIC_PROVIDER_LABELS: Record<string, string> = {
+  meralco: 'Meralco',
+  veco: 'VECO',
+  dlpc: 'DLPC',
+  beneco: 'BENECO',
+  neeco: 'NEECO',
+};
 
 type PickedFile = { uri: string; name: string; size?: number };
+type ReviewSource = 'ai' | 'manual' | 'fallback';
 
 function emptyFields(): ParsedUtilityBill {
   const now = new Date();
@@ -37,6 +46,7 @@ function emptyFields(): ParsedUtilityBill {
 
 export default function UploadUtilityBillScreen() {
   const router = useRouter();
+  const { unitId } = useLocalSearchParams<{ unitId?: string }>();
   const { data: units, isLoading: unitsLoading } = useUtilityUnitOptions();
   const parseBill = useParseUtilityBill();
   const createBill = useCreateUtilityBill();
@@ -45,9 +55,49 @@ export default function UploadUtilityBillScreen() {
   const [fields, setFields] = useState<ParsedUtilityBill>(emptyFields());
   const [selectedUnitId, setSelectedUnitId] = useState('');
   const [mode, setMode] = useState<'pick' | 'review'>('pick');
-  const [manual, setManual] = useState(false);
+  const [reviewSource, setReviewSource] = useState<ReviewSource>('manual');
   const [banner, setBanner] = useState('');
   const [error, setError] = useState('');
+  const [savedBillId, setSavedBillId] = useState<string | null>(null);
+  const selectedUnit = (units ?? []).find(unit => unit.id === selectedUnitId) ?? null;
+  const manual = reviewSource !== 'ai';
+
+  useEffect(() => {
+    if (selectedUnitId || !units) return;
+    const requestedUnit = unitId ? units.find(unit => unit.id === unitId) : null;
+    if (requestedUnit) {
+      setSelectedUnitId(requestedUnit.id);
+      return;
+    }
+    if (units.length === 1) setSelectedUnitId(units[0].id);
+  }, [selectedUnitId, unitId, units]);
+
+  useEffect(() => {
+    if (!selectedUnit || fields.utility_type !== 'electric') return;
+
+    const provider = selectedUnit.property?.electric_provider;
+    const rate = selectedUnit.property?.default_rate_per_kwh;
+    if (!provider && rate == null) return;
+
+    setFields(current => {
+      if (current.utility_type !== 'electric') return current;
+
+      let changed = false;
+      const next = { ...current };
+      if (!current.provider.trim() && provider && provider !== 'manual') {
+        next.provider = ELECTRIC_PROVIDER_LABELS[provider] ?? provider;
+        changed = true;
+      }
+      if (current.rate_per_kwh == null && rate != null) {
+        next.rate_per_kwh = Number(rate);
+        changed = true;
+      }
+      return changed ? next : current;
+    });
+  }, [
+    fields.utility_type,
+    selectedUnit,
+  ]);
 
   async function pickPdf() {
     const result = await DocumentPicker.getDocumentAsync({
@@ -57,12 +107,21 @@ export default function UploadUtilityBillScreen() {
     if (result.canceled) return;
     const asset = result.assets[0];
     setPicked({ uri: asset.uri, name: asset.name, size: asset.size });
+    setBillPdfUrl(null);
+    setBanner('');
+    setError('');
+  }
+
+  function removePickedPdf() {
+    if (parseBill.isPending || createBill.isPending) return;
+    setPicked(null);
+    setBillPdfUrl(null);
     setBanner('');
     setError('');
   }
 
   function enterManual() {
-    setManual(true);
+    setReviewSource('manual');
     setFields(emptyFields());
     setMode('review');
     setBanner('');
@@ -78,18 +137,18 @@ export default function UploadUtilityBillScreen() {
       setBillPdfUrl(result.billPdfUrl);
       if (result.parsed) {
         setFields({ ...emptyFields(), ...result.parsed });
-        setManual(false);
+        setReviewSource('ai');
         setMode('review');
         return;
       }
-      setManual(true);
+      setReviewSource('fallback');
       setFields(emptyFields());
       setMode('review');
-      setBanner(result.message ?? 'Could not parse this document. Please enter details manually.');
+      setBanner('We could not read this PDF automatically. Add the bill details below, then save it when everything looks right.');
     } catch (err) {
       const message = err instanceof Error && err.message.toLowerCase().includes('row-level security')
         ? 'Storage is not ready for utility bill uploads. Apply the latest Supabase storage migration, then try again.'
-        : 'Could not upload this PDF. Please try again or enter the bill manually.';
+        : 'Could not upload this PDF. Try again, or enter the bill manually.';
       setError(message);
     }
   }
@@ -119,26 +178,46 @@ export default function UploadUtilityBillScreen() {
         ratePerKwh: fields.rate_per_kwh,
         amount: fields.amount,
         billPdfUrl,
+        billFileName: picked?.name ?? null,
         parsedBy: manual ? 'manual' : 'llm',
         confidence: manual ? null : fields.confidence,
       });
-      Alert.alert('Utility Bill Saved', 'The bill is ready for review and confirmation.', [
-        { text: 'OK', onPress: () => router.replace(`/(landlord)/utilities/${id}` as any) },
-      ]);
+      setSavedBillId(id);
     } catch {
       setError('Could not save this utility bill.');
     }
   }
 
+  function goBack() {
+    if (createBill.isPending || parseBill.isPending) return;
+    if (mode === 'review') {
+      setMode('pick');
+      setError('');
+      setBanner('');
+      return;
+    }
+    router.back();
+  }
+
+  function viewSavedBill() {
+    if (!savedBillId) return;
+    router.replace(`/(landlord)/utilities/${savedBillId}` as any);
+  }
+
   if (unitsLoading) return <LoadingSpinner fullScreen />;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
-      <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6', paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', alignItems: 'center' }}>
-        <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={{ marginRight: 12 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+      <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1EFEC', paddingHorizontal: 20, paddingVertical: 14, flexDirection: 'row', alignItems: 'center' }}>
+        <TouchableOpacity onPress={goBack} activeOpacity={0.7} style={{ marginRight: 12 }}>
           <Ionicons name="chevron-back" size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: '#111827' }}>Upload Utility Bill</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827' }}>Upload Utility Bill</Text>
+          {mode === 'review' ? (
+            <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 1 }}>Review and edit before saving</Text>
+          ) : null}
+        </View>
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -158,9 +237,19 @@ export default function UploadUtilityBillScreen() {
             </TouchableOpacity>
 
             {picked && (
-              <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F3F4F6', padding: 14, marginBottom: 16 }}>
-                <Text style={{ fontSize: 14, fontWeight: '800', color: '#111827' }}>{picked.name}</Text>
-                <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>{picked.size ? `${Math.round(picked.size / 1024)} KB` : 'Ready to parse'}</Text>
+              <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F1EFEC', padding: 14, marginBottom: 16, flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '800', color: '#111827' }} numberOfLines={1}>{picked.name}</Text>
+                  <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>{picked.size ? `${Math.round(picked.size / 1024)} KB` : 'Ready to parse'}</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={removePickedPdf}
+                  activeOpacity={0.75}
+                  disabled={parseBill.isPending || createBill.isPending}
+                  style={{ marginLeft: 12, width: 34, height: 34, borderRadius: 17, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center', opacity: parseBill.isPending || createBill.isPending ? 0.55 : 1 }}
+                >
+                  <Ionicons name="trash-outline" size={17} color="#DC2626" />
+                </TouchableOpacity>
               </View>
             )}
 
@@ -169,19 +258,14 @@ export default function UploadUtilityBillScreen() {
           </>
         ) : (
           <>
-            {!manual && (
-              <AlertBox
-                type={fields.confidence === 'high' ? 'success' : 'warning'}
-                message={fields.confidence === 'high' ? 'AI parse complete. Please review before saving.' : 'Low confidence parse. Please review carefully.'}
-              />
-            )}
+            <ReviewBanner source={reviewSource} />
 
             <Text style={{ fontSize: 13, fontWeight: '700', color: '#374151', marginBottom: 8 }}>Unit</Text>
-            <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F3F4F6', overflow: 'hidden', marginBottom: 16 }}>
+            <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F1EFEC', overflow: 'hidden', marginBottom: 16 }}>
               {(units ?? []).map((unit, index) => {
                 const selected = selectedUnitId === unit.id;
                 return (
-                  <TouchableOpacity key={unit.id} onPress={() => setSelectedUnitId(unit.id)} activeOpacity={0.75} style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: index < (units!.length - 1) ? 1 : 0, borderBottomColor: '#F3F4F6', backgroundColor: selected ? `${PRIMARY}0D` : '#fff' }}>
+                  <TouchableOpacity key={unit.id} onPress={() => setSelectedUnitId(unit.id)} activeOpacity={0.75} style={{ flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: index < (units!.length - 1) ? 1 : 0, borderBottomColor: '#F1EFEC', backgroundColor: selected ? `${PRIMARY}0D` : '#fff' }}>
                     <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: '#111827' }}>Unit {unit.unit_number}{unit.property?.name ? ` - ${unit.property.name}` : ''}</Text>
                     {selected && <Ionicons name="checkmark-circle" size={20} color={PRIMARY} />}
                   </TouchableOpacity>
@@ -192,7 +276,7 @@ export default function UploadUtilityBillScreen() {
             <Text style={{ fontSize: 13, fontWeight: '700', color: '#374151', marginBottom: 8 }}>Utility Type</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 16 }}>
               {UTILITY_TYPES.map(type => (
-                <TouchableOpacity key={type} onPress={() => setField('utility_type', type)} activeOpacity={0.75} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: fields.utility_type === type ? PRIMARY : '#F3F4F6' }}>
+                <TouchableOpacity key={type} onPress={() => setField('utility_type', type)} activeOpacity={0.75} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: fields.utility_type === type ? PRIMARY : '#F1EFEC' }}>
                   <Text style={{ fontSize: 13, fontWeight: '700', color: fields.utility_type === type ? '#fff' : '#6B7280', textTransform: 'capitalize' }}>{type}</Text>
                 </TouchableOpacity>
               ))}
@@ -209,11 +293,64 @@ export default function UploadUtilityBillScreen() {
             </View>
             <Field label="Amount" value={fields.amount ? String(fields.amount) : ''} onChange={value => setField('amount', Number(value))} keyboardType="decimal-pad" />
 
-            <Button label="Save Bill" loading={createBill.isPending} onPress={saveBill} />
+            <Button label="Save Bill" loading={createBill.isPending} onPress={saveBill} style={{ marginBottom: 10 }} />
+            <Button label={picked ? 'Change PDF' : 'Back to Upload'} variant="secondary" onPress={goBack} disabled={createBill.isPending} />
           </>
         )}
       </ScrollView>
+
+      <AppModal
+        visible={!!savedBillId}
+        tone="success"
+        title="Bill Saved"
+        message="The utility bill is now posted and ready to view."
+        confirmLabel="View Bill"
+        onConfirm={viewSavedBill}
+      />
     </SafeAreaView>
+  );
+}
+
+function ReviewBanner({ source }: { source: ReviewSource }) {
+  const subtitle = source === 'ai'
+    ? 'AI filled in the bill details. Make any edits needed, then save.'
+    : source === 'fallback'
+      ? 'The PDF is attached. Enter the bill details below, then save.'
+      : 'Enter the bill details below, then save.';
+
+  return (
+    <View
+      style={{
+        backgroundColor: PRIMARY,
+        borderRadius: 16,
+        padding: 14,
+        marginBottom: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.14)',
+      }}
+    >
+      <View
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: 17,
+          backgroundColor: 'rgba(255,255,255,0.14)',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: 12,
+        }}
+      >
+        <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '800' }}>Review carefully before saving.</Text>
+        <Text style={{ color: 'rgba(255,255,255,0.78)', fontSize: 12, lineHeight: 17, marginTop: 3 }}>
+          {subtitle}
+        </Text>
+      </View>
+    </View>
   );
 }
 
@@ -239,7 +376,7 @@ function Field({
         keyboardType={keyboardType}
         placeholder={label}
         placeholderTextColor="#9CA3AF"
-        style={{ backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', height: 52, paddingHorizontal: 16, color: '#111827', fontSize: 15 }}
+        style={{ backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#E4E0DC', height: 52, paddingHorizontal: 16, color: '#111827', fontSize: 15 }}
       />
     </View>
   );

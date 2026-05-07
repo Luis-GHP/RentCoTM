@@ -9,8 +9,8 @@ type Props = TouchableOpacityProps & {
 };
 
 const STYLES: Record<Variant, { bg: string; text: string; border?: string }> = {
-  primary:   { bg: '#1B3C34', text: '#FFFFFF' },
-  secondary: { bg: 'transparent', text: '#1B3C34', border: '#1B3C34' },
+  primary:   { bg: '#C34A1A', text: '#FFFFFF' },
+  secondary: { bg: 'transparent', text: '#2F4A7D', border: '#2F4A7D' },
   danger:    { bg: 'transparent', text: '#DC2626', border: '#DC2626' },
 };
 
@@ -28,7 +28,7 @@ export function Button({ label, variant = 'primary', loading = false, disabled, 
           borderRadius: 14,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: isDisabled && variant === 'primary' ? '#E5E7EB' : s.bg,
+          backgroundColor: isDisabled && variant === 'primary' ? '#E4E0DC' : s.bg,
           borderWidth: s.border ? 1.5 : 0,
           borderColor: isDisabled ? '#D1D5DB' : s.border,
         },
@@ -42,7 +42,7 @@ export function Button({ label, variant = 'primary', loading = false, disabled, 
           style={{
             fontSize: 15,
             fontWeight: '600',
-            color: isDisabled && variant === 'primary' ? '#9CA3AF' : s.text,
+            color: isDisabled ? '#9CA3AF' : s.text,
           }}
         >
           {label}

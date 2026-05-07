@@ -9,15 +9,20 @@ export default function RegisterScreen() {
   const { refreshProfile } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   async function handleRegister() {
     setError('');
+    setSuccess('');
     if (!name.trim()) { setError('Full name is required.'); return; }
     if (!email.trim()) { setError('Email is required.'); return; }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
     setLoading(true);
 
     const { data, error: signUpError } = await supabase.auth.signUp({
@@ -28,7 +33,7 @@ export default function RegisterScreen() {
 
     if (!data.session) {
       setLoading(false);
-      setError('Please check your email and confirm your account, then sign in.');
+      setSuccess('Please check your email and confirm your account, then sign in.');
       return;
     }
 
@@ -37,6 +42,14 @@ export default function RegisterScreen() {
       p_email: email,
     });
     if (profileError) { setError(profileError.message); setLoading(false); return; }
+
+    if (phone.trim()) {
+      const { error: phoneError } = await supabase
+        .from('landlord')
+        .update({ phone: phone.trim() })
+        .eq('user_id', data.user!.id);
+      if (phoneError) { setError(phoneError.message); setLoading(false); return; }
+    }
 
     await refreshProfile();
     router.replace('/');
@@ -50,6 +63,12 @@ export default function RegisterScreen() {
       {error ? (
         <View className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
           <Text className="text-red-600 text-sm">{error}</Text>
+        </View>
+      ) : null}
+
+      {success ? (
+        <View className="bg-confirmed-bg border border-confirmed rounded-lg p-3 mb-4">
+          <Text className="text-confirmed text-sm">{success}</Text>
         </View>
       ) : null}
 
@@ -71,13 +90,31 @@ export default function RegisterScreen() {
         onChangeText={setEmail}
       />
 
+      <Text className="text-sm font-medium text-gray-700 mb-1">Phone</Text>
+      <TextInput
+        className="border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900 mb-4"
+        placeholder="Optional"
+        keyboardType="phone-pad"
+        value={phone}
+        onChangeText={setPhone}
+      />
+
       <Text className="text-sm font-medium text-gray-700 mb-1">Password</Text>
       <TextInput
-        className="border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900 mb-6"
+        className="border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900 mb-4"
         placeholder="Min. 8 characters"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
+      />
+
+      <Text className="text-sm font-medium text-gray-700 mb-1">Confirm Password</Text>
+      <TextInput
+        className="border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900 mb-6"
+        placeholder="Re-enter password"
+        secureTextEntry
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
       />
 
       <TouchableOpacity

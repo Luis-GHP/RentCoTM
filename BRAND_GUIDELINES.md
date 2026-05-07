@@ -17,16 +17,27 @@
 
 ## 2. Colors
 
-### 2.1 Primary — Forest Green
+### 2.1 Primary - Steel Ink Blue
 
-The brand's core color. Conveys trust, stability, and ownership.
+The brand's core color. It should feel stable, professional, and calm without blending into the common green property-app palette.
 
 | Token | Hex | When to use |
 |---|---|---|
-| `primary-900` | `#1B3C34` | Headers, primary buttons, active nav tab, splash |
-| `primary-500` | `#1F7A58` | Links, secondary brand accents |
-| `primary-100` | `#C6E8DC` | Icon tile backgrounds (Quick Actions) |
-| `primary-50`  | `#E8F5F0` | Tinted surface highlights |
+| `primary-900` | `#1E3158` | Deep hero layers, pressed states, dark accents |
+| `primary-500` | `#2F4A7D` | Headers, active nav tab, brand marks, core actions |
+| `primary-100` | `#D8E2F2` | Blue borders, soft dividers, quiet accents |
+| `primary-50`  | `#EDF3FF` | Tinted brand surfaces and selected rows |
+
+### 2.1.1 Accent - Rust
+
+Use rust for deliberate calls to action and warmer points of emphasis. Do not use it as a status color.
+
+| Token | Hex | When to use |
+|---|---|---|
+| `accent-500` | `#C34A1A` | Primary CTA emphasis, important links, selected action accents |
+| `accent-600` | `#A43A12` | Pressed accent state |
+| `accent-hero` | `#FFB14A` | Hero-card highlight text on dark blue |
+| `accent-50` | `#FFF0EA` | Soft accent background |
 
 **Rule:** Never use `primary` as a background behind long text blocks.
 
@@ -38,10 +49,10 @@ Fixed. Never substitute with primary shades or invent new ones.
 
 | Status | Text | Background | Used for |
 |---|---|---|---|
-| Confirmed / Active | `#16A34A` | `#DCFCE7` | Paid payments, active tenants, confirmed bills |
-| Pending | `#D97706` | `#FEF3C7` | Awaiting landlord confirmation |
+| Confirmed / Active | `#14804A` | `#EAF7EF` | Paid payments, active tenants, confirmed bills |
+| Pending | `#D99A2B` | `#FFFBEB` | Awaiting landlord confirmation |
 | Overdue | `#DC2626` | `#FEE2E2` | Past-due payments, overdue alerts |
-| Inactive | `#6B7280` | `#F3F4F6` | Deactivated tenants, voided ORs |
+| Inactive | `#6B7280` | `#F1EFEC` | Deactivated tenants, voided ORs |
 
 **Rule:** Always pair the text color with its matching background. Never use either alone.
 
@@ -55,9 +66,9 @@ Fixed. Never substitute with primary shades or invent new ones.
 | `neutral-800` | `#1F2937` | Body text |
 | `neutral-500` | `#6B7280` | Labels, secondary text, inactive icons |
 | `neutral-400` | `#9CA3AF` | Placeholder text, disabled |
-| `neutral-200` | `#E5E7EB` | Dividers, row separators |
-| `neutral-100` | `#F3F4F6` | Section backgrounds inside cards |
-| `neutral-50`  | `#F9FAFB` | Page background |
+| `neutral-200` | `#E4E0DC` | Dividers, row separators |
+| `neutral-100` | `#F1EFEC` | Section backgrounds inside cards |
+| `neutral-50`  | `#F7F6F3` | Page background |
 | `neutral-0`   | `#FFFFFF` | Card backgrounds |
 
 ---
@@ -273,7 +284,7 @@ Background: `primary-900` top section, white below — or full white with a
 
 | Do | Don't |
 |---|---|
-| Use `primary-900` for all primary CTAs | Use blue or any off-brand color for buttons |
+| Use `primary-500` or `accent-500` for intentional CTAs | Use the old forest green brand palette |
 | Pair every status color with its background | Use status text colors without the bg |
 | Prefix all peso amounts with `₱` | Write `PHP`, `P`, or omit the symbol |
 | Format as `₱X,XXX.XX` with comma | Write `₱8000` or `₱8000.00` without comma |

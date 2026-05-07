@@ -1,5 +1,7 @@
 export { AlertBox } from './AlertBox';
+export { AppModal } from './AppModal';
 export { Avatar } from './Avatar';
+export { BrandMark, BrandText, BrandWordmark } from './BrandLogo';
 export { Button } from './Button';
 export { Card } from './Card';
 export { EmptyState } from './EmptyState';
@@ -7,5 +9,7 @@ export { FilterTabs } from './FilterTabs';
 export { FormInput } from './FormInput';
 export { ListRow } from './ListRow';
 export { LoadingSpinner } from './LoadingSpinner';
+export { PageBackground } from './PageBackground';
+export { PromptBanner } from './PromptBanner';
 export { SectionHeader } from './SectionHeader';
 export { StatusBadge } from './StatusBadge';

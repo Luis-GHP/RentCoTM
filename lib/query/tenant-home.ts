@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { uploadDocumentFile } from './documents';
+import { notifyLandlordsForMaintenanceRequest, notifyLandlordsForUtilityBill } from '../notifications';
+import { getMonthName } from '../format';
+import { currentPeriod } from '../domain/periods';
+import { resolveStorageUrl } from '../storage';
+import { getMaintenancePhotoSummaries } from './maintenance-photos';
 
 export type TenantPaymentDetail = {
   id: string;
@@ -59,9 +64,33 @@ export type TenantMaintenanceDetail = {
   unit: { id: string; unit_number: string; property: { name: string } | null } | null;
 };
 
-function getCurrentPeriod() {
-  const now = new Date();
-  return { month: now.getMonth() + 1, year: now.getFullYear() };
+export type TenantMaintenanceListRow = {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  category: string;
+  created_at: string;
+  resolved_at: string | null;
+  thumbnail_url: string | null;
+  photo_count: number;
+};
+
+function normalizeOne<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
+function withTimeout<T>(promise: PromiseLike<T>, ms: number, message: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error(message)), ms);
+    }),
+  ]).finally(() => {
+    if (timeoutId) clearTimeout(timeoutId);
+  });
 }
 
 export function useTenantActiveLease(tenantId?: string) {
@@ -81,21 +110,31 @@ export function useTenantActiveLease(tenantId?: string) {
       const { data, error } = await supabase
         .from('lease')
         .select(`
-          id, monthly_rent, start_date, end_date, status,
+          id, monthly_rent, start_date, end_date, status, created_at,
           security_deposit, security_deposit_balance,
-          unit:unit_id (id, unit_number, property:property_id (name))
+          unit:unit_id (id, unit_number, property:property_id (id, name))
         `)
         .in('id', ids)
         .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      if (!data) return null;
+
+      const lease = data as any;
+      const unit = normalizeOne(lease.unit);
+      const property = normalizeOne(unit?.property);
+      return {
+        ...lease,
+        unit: unit ? { ...unit, property } : null,
+      };
     },
   });
 }
 
 export function useCurrentRentPayment(leaseId?: string) {
-  const { month, year } = getCurrentPeriod();
+  const { month, year } = currentPeriod();
   return useQuery({
     queryKey: ['current-rent', leaseId, month, year],
     enabled: !!leaseId,
@@ -195,7 +234,13 @@ export function useAllTenantRequests(unitId?: string) {
         .eq('unit_id', unitId!)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      const rows = (data ?? []) as TenantMaintenanceListRow[];
+      const photos = await getMaintenancePhotoSummaries(rows.map(row => row.id));
+      return rows.map(row => ({
+        ...row,
+        thumbnail_url: photos.get(row.id)?.thumbnail_url ?? null,
+        photo_count: photos.get(row.id)?.photo_count ?? 0,
+      }));
     },
   });
 }
@@ -258,7 +303,42 @@ export function useTenantUtilityBill(billId?: string) {
         .eq('id', billId!)
         .single();
       if (error) throw error;
-      return data as unknown as TenantUtilityBillDetail;
+      return {
+        ...(data as unknown as TenantUtilityBillDetail),
+        bill_pdf_url: await resolveStorageUrl((data as { bill_pdf_url: string | null }).bill_pdf_url),
+      };
+    },
+  });
+}
+
+export function useSubmitUtilityBillPaymentReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (bill: TenantUtilityBillDetail) => {
+      const { error } = await withTimeout(
+        supabase.rpc('submit_utility_bill_payment_review', {
+          p_bill_id: bill.id,
+        }),
+        15000,
+        'Submitting this receipt took too long. Check your connection and try again.'
+      );
+      if (error) throw error;
+
+      void notifyLandlordsForUtilityBill(bill.id, {
+        title: 'Utility payment submitted',
+        body: `${getMonthName(bill.period_month)} ${bill.period_year} ${bill.utility_type} receipt is ready for verification.`,
+        data: { type: 'utility_payment_submitted', route: `/(landlord)/utilities/${bill.id}`, utility_bill_id: bill.id },
+      });
+    },
+    onSuccess: (_data, bill) => {
+      queryClient.setQueryData<TenantUtilityBillDetail | undefined>(['tenant-utility-bill', bill.id], current => (
+        current ? { ...current, status: 'payment_submitted' } : current
+      ));
+      queryClient.invalidateQueries({ queryKey: ['tenant-utility-bill', bill.id] });
+      queryClient.invalidateQueries({ queryKey: ['tenant-bills'] });
+      queryClient.invalidateQueries({ queryKey: ['all-tenant-bills'] });
+      queryClient.invalidateQueries({ queryKey: ['utility-bills'] });
+      queryClient.invalidateQueries({ queryKey: ['utility-bill', bill.id] });
     },
   });
 }
@@ -279,6 +359,31 @@ export function useTenantMaintenanceRequest(requestId?: string) {
         .single();
       if (error) throw error;
       return data as unknown as TenantMaintenanceDetail;
+    },
+  });
+}
+
+export function useRespondTenantMaintenanceResolution() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { requestId: string; fixed: boolean }) => {
+      const { error } = await supabase.rpc('respond_to_maintenance_resolution', {
+        p_request_id: params.requestId,
+        p_fixed: params.fixed,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_data, { requestId, fixed }) => {
+      queryClient.invalidateQueries({ queryKey: ['tenant-maintenance-request', requestId] });
+      queryClient.invalidateQueries({ queryKey: ['tenant-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['all-tenant-requests'] });
+      void notifyLandlordsForMaintenanceRequest(requestId, {
+        title: 'Maintenance response',
+        body: fixed
+          ? 'A tenant confirmed the repair is fixed.'
+          : 'A tenant said the repair still needs attention.',
+        data: { type: 'maintenance_response', route: `/(landlord)/maintenance/${requestId}`, maintenance_id: requestId },
+      });
     },
   });
 }
@@ -338,32 +443,44 @@ export function useCreateTenantMaintenanceRequest() {
         .single();
       if (requestError) throw requestError;
 
+      let failedPhotoCount = 0;
       for (const [index, photo] of params.photos.entries()) {
-        const fileUrl = await uploadDocumentFile({
-          uri: photo.uri,
-          fileName: photo.fileName,
-          contentType: photo.contentType,
-          pathPrefix: `maintenance_request/${request.id}`,
-        });
-        const { error: docError } = await supabase.from('document').insert({
-          entity_type: 'maintenance_request',
-          entity_id: request.id,
-          doc_type: 'photo',
-          file_url: fileUrl,
-          file_name: photo.fileName,
-          sort_order: index,
-          uploaded_by: 'tenant',
-        });
-        if (docError) throw docError;
+        try {
+          const fileUrl = await uploadDocumentFile({
+            uri: photo.uri,
+            fileName: photo.fileName,
+            contentType: photo.contentType,
+            pathPrefix: `maintenance_request/${request.id}`,
+          });
+          const { error: docError } = await supabase.from('document').insert({
+            entity_type: 'maintenance_request',
+            entity_id: request.id,
+            doc_type: 'photo',
+            file_url: fileUrl,
+            file_name: photo.fileName,
+            sort_order: index,
+            uploaded_by: 'tenant',
+          });
+          if (docError) throw docError;
+        } catch (error) {
+          failedPhotoCount += 1;
+          console.warn('Could not upload maintenance photo', error);
+        }
       }
 
-      return request.id as string;
+      return { id: request.id as string, unitId: request.unit_id as string, failedPhotoCount };
     },
-    onSuccess: requestId => {
+    onSuccess: (result, params) => {
       queryClient.invalidateQueries({ queryKey: ['all-tenant-requests'] });
       queryClient.invalidateQueries({ queryKey: ['tenant-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['tenant-maintenance-request', requestId] });
-      queryClient.invalidateQueries({ queryKey: ['documents', 'maintenance_request', requestId] });
+      queryClient.invalidateQueries({ queryKey: ['tenant-maintenance-request', result.id] });
+      queryClient.invalidateQueries({ queryKey: ['documents', 'maintenance_request', result.id] });
+      queryClient.invalidateQueries({ queryKey: ['document-center'] });
+      void notifyLandlordsForMaintenanceRequest(result.id, {
+        title: 'New maintenance request',
+        body: params.title.trim(),
+        data: { type: 'maintenance_created', route: `/(landlord)/maintenance/${result.id}`, maintenance_id: result.id },
+      });
     },
   });
 }

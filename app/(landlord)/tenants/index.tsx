@@ -7,11 +7,11 @@ import { Avatar } from '../../../components/shared/Avatar';
 import { EmptyState } from '../../../components/shared/EmptyState';
 import { FilterTabs } from '../../../components/shared/FilterTabs';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
+import { MainHeader } from '../../../components/shared/MainHeader';
+import { PageBackground } from '../../../components/shared/PageBackground';
 import { StatusBadge } from '../../../components/shared/StatusBadge';
 import { useAllTenants, TenantListFilter, LandlordTenantRow } from '../../../lib/query/tenants';
 import { formatPHP } from '../../../lib/format';
-
-const PRIMARY = '#1B3C34';
 
 const FILTERS = [
   { key: 'active' as TenantListFilter, label: 'Active' },
@@ -27,7 +27,7 @@ function TenantRow({ tenant, onPress }: { tenant: LandlordTenantRow; onPress: ()
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.75}
-      style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}
+      style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F1EFEC' }}
     >
       <Avatar name={tenant.name} size={42} />
       <View style={{ flex: 1, marginLeft: 12 }}>
@@ -52,16 +52,23 @@ export default function TenantsScreen() {
   if (isLoading) return <LoadingSpinner fullScreen />;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#F9FAFB' }}>
-      <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 10 }}>
-          <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: '#111827' }}>Tenants</Text>
-          <TouchableOpacity onPress={() => router.push('/(landlord)/tenants/invite')} activeOpacity={0.7}>
-            <Ionicons name="person-add-outline" size={24} color={PRIMARY} />
+    <SafeAreaView edges={['left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: '#F7F6F3' }}>
+      <PageBackground />
+      <MainHeader
+        title="Tenants"
+        right={(
+          <TouchableOpacity
+            onPress={() => router.push('/(landlord)/tenants/invite')}
+            activeOpacity={0.7}
+            style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Ionicons name="person-add-outline" size={22} color="#fff" />
           </TouchableOpacity>
-        </View>
-        <View style={{ paddingHorizontal: 20, paddingBottom: 4 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', borderRadius: 10, paddingHorizontal: 12, height: 42 }}>
+        )}
+      />
+      <View style={{ backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1EFEC' }}>
+        <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1EFEC', borderRadius: 10, paddingHorizontal: 12, height: 42 }}>
             <Ionicons name="search-outline" size={18} color="#9CA3AF" />
             <TextInput
               value={search}
@@ -94,7 +101,7 @@ export default function TenantsScreen() {
         />
       ) : (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={false}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F3F4F6', overflow: 'hidden' }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#F1EFEC', overflow: 'hidden' }}>
             {tenants!.map(tenant => (
               <TenantRow
                 key={`${tenant.tenant_id}-${tenant.lease_id ?? 'none'}`}
